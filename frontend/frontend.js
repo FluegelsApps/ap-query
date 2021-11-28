@@ -1,15 +1,18 @@
+//Download Modal Interface
 let downloadModal;
 let downloadButton;
 let downloadModalClose;
 let downloadDataButton;
 let downloadDataSelector;
 
+//Exception Modal Interface
 let exceptionModal;
 let exceptionModalClose;
 let exceptionModalCloseButton;
 let exceptionModalOrigin;
 let exceptionModalInstance;
 
+//Add Configuration Modal Interface
 let addConfigurationButton;
 let addConfigurationModal;
 let addConfigurationModalClose;
@@ -18,6 +21,7 @@ let addConfigurationUsernameField;
 let addConfigurationPasswordField;
 let addConfigurationSaveButton;
 
+//Update Configuration Modal Interface
 let updateConfigurationModal;
 let updateConfigurationModalClose;
 let updateConfigurationHostField;
@@ -25,12 +29,17 @@ let updateConfigurationUsernameField;
 let updateConfigurationPasswordField;
 let updateConfigurationSaveButton;
 
+//Measurement Database Interface
 let deleteDatabaseButton;
 let measurementChartSelector;
+let measurementTimeSelector;
+let configurationTable;
 
+//Variables
 var socket;
 var measurementChart;
 var selectedAP = " ";
+var selectedTimeSpan = -1;
 var lastMeasurements;
 
 const configurationTableSwitch = `<button
@@ -104,25 +113,27 @@ const downloadDataItem = `<div class="mdc-checkbox">
 </div>
 <label for="checkbox-1">$NAME$</label>`;
 
-let configurationTable;
-
 window.onload = function () {
-  console.log("Setting up Socket.IO");
+//Initialize Socket IO
   socket = io();
 
+  //Reference views
   initialize();
 
   downloadButton.onclick = function () {
     downloadModal.style.display = "block";
 
+    //Remove all children
     for (let i = 0; i < downloadDataSelector.children.length; i++)
       downloadDataSelector.removeChild(downloadDataSelector.children[i]);
 
+    //Collect a list of all access points
     accessPoints = [];
     for (let i = 0; i < lastMeasurements.length; i++)
       if (!accessPoints.includes(lastMeasurements[i].ap))
         accessPoints.push(lastMeasurements[i].ap);
 
+    //Create the list of downloadable access point data
     for (let i = 0; i < accessPoints.length; i++) {
       let element = document.createElement("div");
       element.innerHTML = downloadDataItem.replace("$NAME$", accessPoints[i]);
@@ -130,40 +141,50 @@ window.onload = function () {
     }
   };
 
+  //Close the download dialog
   downloadModalClose.onclick = function () {
     downloadModal.style.display = "none";
   };
 
+  //Download the acutal data
   downloadDataButton.onclick = function () {
     downloadModal.style.display = "none";
     let accessPoints = [];
 
+    //Collect all selected access points
     for (let i = 0; i < downloadDataSelector.children.length; i++)
       if (downloadDataSelector.children[i].querySelector("#checkbox-1").checked)
         accessPoints.push(
           downloadDataSelector.children[i].querySelector("label").innerHTML
         );
 
+    //Send the request ot the web server
     socket.emit("request_exportdb_file", JSON.stringify(accessPoints));
   };
 
+  //Close the exception dialog
   exceptionModalClose.onclick = function () {
     exceptionModal.style.display = "none";
   };
 
+  //Close the exception dialog
   exceptionModalCloseButton.onclick = function () {
     exceptionModal.style.display = "none";
   };
 
+  //Open add configuration dialog
   addConfigurationButton.onclick = function () {
     addConfigurationModal.style.display = "block";
   };
 
+  //Close add configuration dialog
   addConfigurationModalClose.onclick = function () {
     addConfigurationModal.style.display = "none";
   };
 
+  //Add a configuration to the database
   addConfigurationSaveButton.onclick = function () {
+    //Send the command to the server
     socket.emit(
       "insert_configuration",
       JSON.stringify({
@@ -173,33 +194,70 @@ window.onload = function () {
       })
     );
 
+    //Reset the interface of the modal
     addConfigurationHostField.value = "";
     addConfigurationUsernameField.value = "";
     addConfigurationPasswordField.value = "";
     addConfigurationModal.style.display = "none";
   };
 
+  //Close the update configuration modal
   updateConfigurationModalClose.onclick = function () {
     updateConfigurationModal.style.display = "none";
   };
 
+  //Delete the contents of the measurements database
   deleteDatabaseButton.onclick = function () {
+    //Prompt the user to confirm the action
     if (confirm("Are you sure?")) {
+      //Send the command to the web server
       socket.emit("delete_measurements", "");
       measurementChart.data.datasets = [];
       measurementChart.update();
 
+      //Clear the access point selector
       let parent = document.getElementById("measurementChartSelectorParent");
       for (let i = 1; i < parent.children.length; i++)
         parent.removeChild(parent.children[i]);
     }
   };
 
+  //Listen for changes of the chart access points selector
   measurementChartSelector.listen("MDCSelect:change", () => {
     selectedAP = measurementChartSelector.value;
+
+    //Update the graph
     updateMeasurements(lastMeasurements);
   });
 
+  //Listen for changes of the chart time selector
+  measurementTimeSelector.listen("MDCSelect:change", () => {
+    switch (measurementTimeSelector.value) {
+      case "ten_minutes":
+        selectedTimeSpan = 10 * 60 * 1000;
+        break;
+      case "hour":
+        selectedTimeSpan = 60 * 60 * 1000;
+        break;
+      case "twelve_hours":
+        selectedTimeSpan = 12 * 60 * 60 * 1000;
+        break;
+      case "day":
+        selectedTimeSpan = 24 * 60 * 60 * 1000;
+        break;
+      case "week":
+        selectedTimeSpan = 7 * 24 * 60 * 60 * 1000;
+        break;
+      case "all":
+        selectedTimeSpan = -1;
+        break;
+    }
+
+    //Update the graph
+    updateMeasurements(lastMeasurements);
+  });
+
+  //Close all modals when the window is clicked
   window.onclick = function (event) {
     if (event.target == downloadModal) downloadModal.style.display = "none";
     if (event.target == addConfigurationModal)
@@ -209,25 +267,22 @@ window.onload = function () {
     if (event.target == exceptionModal) exceptionModal.style.display = "none";
   };
 
-  socket.on("status_changed", (status) => {
-    alert(`Status changed to ${status}`);
-  });
-
+  //Notification when the configuration database has been updated
   socket.on("notify_configdb_updated", (configuration) => {
-    console.log("Receiving configuration update:\n" + configuration);
     updateConfiguration(JSON.parse(configuration));
   });
 
+  //Response on requested configuration data
   socket.on("response_configdb_data", (rawConfiguration) => {
-    console.log("Receiving: " + rawConfiguration);
-
     let configuration = JSON.parse(rawConfiguration);
+    
+    //Fill the requested data into the interface
     updateConfigurationModal.style.display = "block";
     updateConfigurationHostField.value = configuration.host;
     updateConfigurationUsernameField.value = configuration.user;
 
+    //Send the update command to the server
     updateConfigurationSaveButton.onclick = function () {
-      console.log("Updating configuration");
       socket.emit(
         "update_configuration",
         JSON.stringify({
@@ -238,10 +293,10 @@ window.onload = function () {
         })
       );
 
+      //Clear the interface and close the dialog
       updateConfigurationHostField.value = "";
       updateConfigurationUsernameField.value = "";
       updateConfigurationPasswordField.value = "";
-
       updateConfigurationModal.style.display = "none";
     };
   });
@@ -264,7 +319,11 @@ window.onload = function () {
 
     let exception = JSON.parse(rawException);
     exceptionModalOrigin.innerHTML = exception.origin;
-    exceptionModalInstance.innerHTML = JSON.stringify(exception.instance, undefined, 4);
+    exceptionModalInstance.innerHTML = JSON.stringify(
+      exception.instance,
+      undefined,
+      4
+    );
   });
 };
 
@@ -291,7 +350,10 @@ function initialize() {
 
   deleteDatabaseButton = document.getElementById("deleteDatabaseButton");
   measurementChartSelector = new mdc.select.MDCSelect(
-    document.querySelector(".mdc-select")
+    document.getElementById("measurementChartSelector")
+  );
+  measurementTimeSelector = new mdc.select.MDCSelect(
+    document.getElementById("measurementTimeSelector")
   );
 
   addConfigurationHostField = new mdc.textField.MDCTextField(
@@ -385,7 +447,10 @@ function updateMeasurements(measurements) {
   let timestamps = [];
 
   for (let i = 0; i < measurements.length; i++)
-    if (!timestamps.includes(measurements[i].timestamp))
+    if (
+      !timestamps.includes(measurements[i].timestamp) &&
+      inTimeRange(measurements[i].timestamp)
+    )
       timestamps.push(measurements[i].timestamp);
   timestamps.sort();
 
@@ -396,7 +461,8 @@ function updateMeasurements(measurements) {
     if (
       measurements[i] != null &&
       measurements[i].ap != null &&
-      selectedAP == measurements[i].ap
+      selectedAP == measurements[i].ap &&
+      inTimeRange(measurements[i].timestamp)
     ) {
       let time = new Date(measurements[i].timestamp);
 
@@ -488,4 +554,10 @@ function normalize(string) {
 
 function formatTime(time) {
   return time < 10 ? "0" + time : time;
+}
+
+function inTimeRange(time) {
+  return (
+    new Date().getTime() - time < selectedTimeSpan || selectedTimeSpan == -1
+  );
 }

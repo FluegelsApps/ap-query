@@ -57,7 +57,7 @@ module.exports = {
       res.send("Access Points: 0");
     });
     app.get("/api/data", (req, res) => {
-      res.send("Data: 0");
+      res.send(measurements.getMeasurements());
     });
 
     app.get("*", (req, res) => {

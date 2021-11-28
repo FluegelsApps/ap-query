@@ -54,7 +54,7 @@
     >
       <h3>Measurement Details</h3>
 
-      <div class="mdc-select mdc-select--outlined">
+      <div id="measurementChartSelector" class="mdc-select mdc-select--outlined">
         <div class="mdc-select__anchor" aria-labelledby="outlined-select-label">
           <span class="mdc-notched-outline">
             <span class="mdc-notched-outline__leading"></span>
@@ -113,9 +113,104 @@
         </div>
       </div>
 
-      <div>
+      <div id="measurementTimeSelector" class="mdc-select mdc-select--outlined" style="margin-top: 10px;">
+        <div class="mdc-select__anchor" aria-labelledby="outlined-select-label">
+          <span class="mdc-notched-outline">
+            <span class="mdc-notched-outline__leading"></span>
+            <span class="mdc-notched-outline__notch">
+              <span id="outlined-select-label" class="mdc-floating-label"
+                >Displayed timespan</span
+              >
+            </span>
+            <span class="mdc-notched-outline__trailing"></span>
+          </span>
+          <span class="mdc-select__selected-text-container">
+            <span
+              id="demo-selected-text"
+              class="mdc-select__selected-text"
+            ></span>
+          </span>
+          <span class="mdc-select__dropdown-icon">
+            <svg
+              class="mdc-select__dropdown-icon-graphic"
+              viewBox="7 10 10 5"
+              focusable="false"
+            >
+              <polygon
+                class="mdc-select__dropdown-icon-inactive"
+                stroke="none"
+                fill-rule="evenodd"
+                points="7 10 12 15 17 10"
+              ></polygon>
+              <polygon
+                class="mdc-select__dropdown-icon-active"
+                stroke="none"
+                fill-rule="evenodd"
+                points="7 15 12 10 17 15"
+              ></polygon>
+            </svg>
+          </span>
+        </div>
+
+        <div
+          class="
+            mdc-select__menu
+            mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth
+          "
+        >
+          <ul class="mdc-list" role="listbox" aria-label="Food picker listbox">
+            <li
+              class="mdc-list-item mdc-list-item--selected"
+              aria-selected="true"
+              data-value=""
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+            </li>
+            <li class="mdc-list-item" aria-selected="false" data-value="ten_minutes" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Last 10 minutes
+                </span>
+              </li>
+              <li class="mdc-list-item" aria-selected="false" data-value="hour" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Last hour
+                </span>
+              </li>
+              <li class="mdc-list-item" aria-selected="false" data-value="twelve_hours" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Last 12 hours
+                </span>
+              </li>
+              <li class="mdc-list-item" aria-selected="false" data-value="day" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Last day
+                </span>
+              </li>
+              <li class="mdc-list-item" aria-selected="false" data-value="week" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Last week
+                </span>
+              </li>
+              <li class="mdc-list-item" aria-selected="false" data-value="all" role="option">
+                <span class="mdc-list-item__ripple"></span>
+                <span class="mdc-list-item__text">
+                  Entire timespan
+                </span>
+              </li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px;">
         <canvas id="measurement-power-chart"></canvas>
       </div>
+
       <button
         style="display: flex; margin-top: 10px"
         class="mdc-button mdc-button--raised mdc-button--leading"
