@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css"
+      rel="stylesheet"
+    />
+    <link href="./main.css" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <script src="https://cdn.socket.io/4.4.0/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="./frontend.js"></script>
+  </head>
+  <body>
+    <h1>Aruba Access Point Power Measurement</h1>
+
+    <div style="padding: 10px 10px" class="mdc-card mdc-card--outlined">
+      <table id="configurationTable">
+        <thead>
+          <tr>
+            <th>Host</th>
+            <th>Status</th>
+            <th>Enabled</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!--AUTO GENERATED AT RUNTIME-->
+        </tbody>
+      </table>
+
+      <button
+        style="display: flex; margin-top: 10px"
+        class="mdc-button mdc-button--raised mdc-button--leading"
+        id="addConfigurationButton"
+      >
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true">add</i>
+        <span style="color: white" class="mdc-button__label"
+          >Add Configuration</span
+        >
+      </button>
+    </div>
+
+    <div
+      style="padding: 10px 10px; margin-top: 10px"
+      class="mdc-card mdc-card--outlined"
+    >
+      <h3>Measurement Details</h3>
+
+      <div class="mdc-select mdc-select--outlined">
+        <div class="mdc-select__anchor" aria-labelledby="outlined-select-label">
+          <span class="mdc-notched-outline">
+            <span class="mdc-notched-outline__leading"></span>
+            <span class="mdc-notched-outline__notch">
+              <span id="outlined-select-label" class="mdc-floating-label"
+                >Select an Access Point to display the data</span
+              >
+            </span>
+            <span class="mdc-notched-outline__trailing"></span>
+          </span>
+          <span class="mdc-select__selected-text-container">
+            <span
+              id="demo-selected-text"
+              class="mdc-select__selected-text"
+            ></span>
+          </span>
+          <span class="mdc-select__dropdown-icon">
+            <svg
+              class="mdc-select__dropdown-icon-graphic"
+              viewBox="7 10 10 5"
+              focusable="false"
+            >
+              <polygon
+                class="mdc-select__dropdown-icon-inactive"
+                stroke="none"
+                fill-rule="evenodd"
+                points="7 10 12 15 17 10"
+              ></polygon>
+              <polygon
+                class="mdc-select__dropdown-icon-active"
+                stroke="none"
+                fill-rule="evenodd"
+                points="7 15 12 10 17 15"
+              ></polygon>
+            </svg>
+          </span>
+        </div>
+
+        <div
+          class="
+            mdc-select__menu
+            mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth
+          "
+        >
+          <ul class="mdc-list" id="measurementChartSelectorParent" role="listbox" aria-label="Food picker listbox">
+            <li
+              class="mdc-list-item mdc-list-item--selected"
+              aria-selected="true"
+              data-value=""
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+            </li>
+            <!--GENERATED AT RUNTIME-->
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <canvas id="measurement-power-chart"></canvas>
+      </div>
+      <button
+        style="display: flex; margin-top: 10px"
+        class="mdc-button mdc-button--raised mdc-button--leading"
+        id="downloadButton"
+      >
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true"
+          >download</i
+        >
+        <span style="color: white" class="mdc-button__label"
+          >Download Data</span
+        >
+      </button>
+
+      <button
+        style="display: flex; margin-top: 10px"
+        class="mdc-button mdc-button--raised mdc-button--leading"
+        id="deleteDatabaseButton"
+      >
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true"
+          >delete_forever</i
+        >
+        <span style="color: white" class="mdc-button__label"
+          >Delete Collected Data</span
+        >
+      </button>
+    </div>
+
+    <div id="addConfigurationModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" , id="addConfigurationModalClose">&times;</span>
+          <p style="color: white"><b>Add New Configuration</b></p>
+        </div>
+        <div style="display: flex; flex-direction: column" class="modal-body">
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="addConfigurationHostField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Host Address</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="addConfigurationUsernameField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Username</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="addConfigurationPasswordField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Password</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="password"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <button
+            style="display: flex; margin-bottom: 10px; margin-top: 10px"
+            class="mdc-button mdc-button--outlined"
+            id="addConfigurationSaveButton"
+          >
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">Save Configuration</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="updateConfigurationModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" , id="updateConfigurationModalClose"
+            >&times;</span
+          >
+          <p style="color: white"><b>Modify Existing Configuration</b></p>
+        </div>
+        <div style="display: flex; flex-direction: column" class="modal-body">
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="updateConfigurationHostField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Host Address</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="updateConfigurationUsernameField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Username</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="updateConfigurationPasswordField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Password</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input
+              type="password"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+            />
+          </label>
+          <button
+            style="display: flex; margin-bottom: 10px; margin-top: 10px"
+            class="mdc-button mdc-button--outlined"
+            id="updateConfigurationSaveButton"
+          >
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">Update Configuration</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="downloadModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" , id="downloadModalClose">&times;</span>
+          <p style="color: white"><b>Download Measurement Data</b></p>
+        </div>
+        <div class="modal-body">
+          <div id="downloadDataForm" class="mdc-form-field" style="flex-direction: column">
+            <!--GENERATED AT RUNTIME-->
+          </div>
+
+          <button
+            style="display: flex; margin-bottom: 10px; margin-top: 10px"
+            class="mdc-button mdc-button--outlined"
+            id="downloadDataButton"
+          >
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">Download</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="exceptionModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="close" , id="exceptionModalClose">&times;</span>
+            <p style="color: white"><b>Exception occurred</b></p>
+          </div>
+          <div class="modal-body">
+            <p id="exceptionModalOrigin"></p>
+            <p id="exceptionModalInstance"></p>
+
+            <button
+            style="display: flex; margin-bottom: 10px; margin-top: 10px"
+            class="mdc-button mdc-button--outlined"
+            id="exceptionModalCloseButton"
+          >
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">Close</span>
+          </button>
+          </div>
+        </div>
+      </div>
+  </body>
+</html>
