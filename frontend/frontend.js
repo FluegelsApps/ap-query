@@ -114,7 +114,7 @@ const downloadDataItem = `<div class="mdc-checkbox">
 <label for="checkbox-1">$NAME$</label>`;
 
 window.onload = function () {
-//Initialize Socket IO
+  //Initialize Socket IO
   socket = io();
 
   //Reference views
@@ -275,7 +275,7 @@ window.onload = function () {
   //Response on requested configuration data
   socket.on("response_configdb_data", (rawConfiguration) => {
     let configuration = JSON.parse(rawConfiguration);
-    
+
     //Fill the requested data into the interface
     updateConfigurationModal.style.display = "block";
     updateConfigurationHostField.value = configuration.host;

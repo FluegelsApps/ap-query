@@ -46,9 +46,9 @@ module.exports = {
     measurements = measurements.substring(0, measurements.length - 1) + "\n]";
     return measurements;
   },
-  downloadMeasurements: function(accessPoints) {
+  downloadMeasurements: function (accessPoints) {
     let condition = "";
-    for(let i = 0; i < accessPoints.length; i++)
+    for (let i = 0; i < accessPoints.length; i++)
       condition = condition + `ap = '${accessPoints[i]}' OR `;
     condition = condition.substring(0, condition.length - 4);
 
@@ -60,31 +60,39 @@ module.exports = {
 
     let measurements = "";
     let part = "";
-    while(downloadStatement.step()) {
-        part = JSON.stringify(downloadStatement.getAsObject()).replaceAll("{", "").replaceAll("}", "");
-        let contentParts = part.split(",");
+    while (downloadStatement.step()) {
+      part = JSON.stringify(downloadStatement.getAsObject())
+        .replaceAll("{", "")
+        .replaceAll("}", "");
+      let contentParts = part.split(",");
 
-        let finalPart = "";
-        for(let i = 0; i < contentParts.length; i++) {
-            let innerParts = contentParts[i].split(":");
-            part = contentParts[i].replace(innerParts[0] + ":", "");
-            
-            if(i == 0) {
-                let date = new Date(parseInt(part));
-                part = `"${formatTime(date.getHours())}:${formatTime(date.getMinutes())}:${formatTime(date.getSeconds())} - ${formatTime(date.getDay())}.${formatTime(date.getMonth())}.${date.getFullYear()}"`;
-            }
+      let finalPart = "";
+      for (let i = 0; i < contentParts.length; i++) {
+        let innerParts = contentParts[i].split(":");
+        part = contentParts[i].replace(innerParts[0] + ":", "");
 
-            if(i > 2) part = '"' + part + ' mW"';
-
-            if(i <= 5) part = part + ",";
-            finalPart = finalPart + part;
+        if (i == 0) {
+          let date = new Date(parseInt(part));
+          part = `"${formatTime(date.getHours())}:${formatTime(
+            date.getMinutes()
+          )}:${formatTime(date.getSeconds())} - ${formatTime(
+            date.getDay()
+          )}.${formatTime(date.getMonth())}.${date.getFullYear()}"`;
         }
-    
 
-        measurements = measurements + finalPart + "\n";
+        if (i > 2) part = '"' + part + ' mW"';
+
+        if (i <= 5) part = part + ",";
+        finalPart = finalPart + part;
+      }
+
+      measurements = measurements + finalPart + "\n";
     }
 
-    return '"Timestamp","Access Point Name","Access Point IP-Address","Current Power","Average Power","Minimum Power","Maximum Power"\n' + measurements;
+    return (
+      '"Timestamp","Access Point Name","Access Point IP-Address","Current Power","Average Power","Minimum Power","Maximum Power"\n' +
+      measurements
+    );
   },
   insertMeasurement: function (
     timestamp,
@@ -107,6 +115,6 @@ module.exports = {
 };
 
 function formatTime(time) {
-    if(time < 10) return `0${time}`;
-    else return time;
+  if (time < 10) return `0${time}`;
+  else return time;
 }

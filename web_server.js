@@ -61,15 +61,15 @@ module.exports = {
     });
 
     app.get("*", (req, res) => {
-        res.contentType = "text/html";
-        res.sendFile(__dirname + "/frontend/notfound.html");
+      res.contentType = "text/html";
+      res.sendFile(__dirname + "/frontend/notfound.html");
     });
 
     io.on("connection", (socket) => {
       //The user connected successfully
       socket.emit(notify_configuration_update, config.getConfiguration());
       socket.emit(notify_measurements_update, measurements.getMeasurements());
-      
+
       socket.on(command_start_measurement, function (credentialsJson) {
         //Start measurement command received
         let credentials = JSON.parse(credentialsJson);
@@ -95,7 +95,7 @@ module.exports = {
         ssh.stopMeasurement(socket);
       });
 
-      socket.on(command_insert_configuration, function(rawConfiguration) {
+      socket.on(command_insert_configuration, function (rawConfiguration) {
         let configuration = JSON.parse(rawConfiguration);
         config.insertConfiguration(
           configuration.host,
@@ -105,35 +105,41 @@ module.exports = {
         io.emit(notify_configuration_update, config.getConfiguration());
       });
 
-      socket.on(command_remove_configuration, function(host) {
+      socket.on(command_remove_configuration, function (host) {
         config.removeConfiguration(host);
         io.emit(notify_configuration_update, config.getConfiguration());
       });
 
-      socket.on(command_update_configuration, function(update) {
+      socket.on(command_update_configuration, function (update) {
         config.updateConfiguration(JSON.parse(update));
         io.emit(notify_configuration_update, config.getConfiguration());
       });
 
-      socket.on(command_start_connection, function(data) {
+      socket.on(command_start_connection, function (data) {
         ssh.startConnection(data, io);
       });
 
-      socket.on(command_stop_connection, function(data) {
+      socket.on(command_stop_connection, function (data) {
         ssh.stopConnection(data, io);
       });
 
-      socket.on(command_delete_measurements, function(args) {
+      socket.on(command_delete_measurements, function (args) {
         measurements.deleteMeasurements();
         socket.emit(notify_measurements_update, measurements.getMeasurements());
       });
 
-      socket.on(request_configuration_data, function(host) {
-        socket.emit(response_configuration_data, config.requestConfiguration(host));
+      socket.on(request_configuration_data, function (host) {
+        socket.emit(
+          response_configuration_data,
+          config.requestConfiguration(host)
+        );
       });
 
-      socket.on(request_export_data, function(accessPoints) {
-        socket.emit(response_export_data, measurements.downloadMeasurements(JSON.parse(accessPoints)));
+      socket.on(request_export_data, function (accessPoints) {
+        socket.emit(
+          response_export_data,
+          measurements.downloadMeasurements(JSON.parse(accessPoints))
+        );
       });
     });
 
@@ -141,7 +147,7 @@ module.exports = {
       console.log("Server listening on port 8000");
     });
 
-    server.on("close", function(event) {
+    server.on("close", function (event) {
       console.log("Server on port 8000 was closed");
     });
   },
