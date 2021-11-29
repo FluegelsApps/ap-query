@@ -182,23 +182,54 @@ window.onload = function () {
     addConfigurationModal.style.display = "none";
   };
 
+  addConfigurationHostField.listen(
+    "input",
+    () => (addConfigurationHostField.valid = addConfigurationHostField.valid)
+  );
+  addConfigurationHostField.valid = addConfigurationHostField.valid;
+
+  addConfigurationUsernameField.listen(
+    "input",
+    () =>
+      (addConfigurationUsernameField.valid =
+        addConfigurationUsernameField.valid)
+  );
+  addConfigurationUsernameField.valid = addConfigurationUsernameField.valid;
+
+  addConfigurationPasswordField.listen(
+    "input",
+    () =>
+      (addConfigurationPasswordField.valid =
+        addConfigurationPasswordField.valid)
+  );
+  addConfigurationPasswordField.valid = addConfigurationPasswordField.valid;
+
   //Add a configuration to the database
   addConfigurationSaveButton.onclick = function () {
-    //Send the command to the server
-    socket.emit(
-      "insert_configuration",
-      JSON.stringify({
-        host: addConfigurationHostField.value,
-        username: addConfigurationUsernameField.value,
-        password: addConfigurationPasswordField.value,
-      })
-    );
+    if (
+      addConfigurationHostField.valid &&
+      addConfigurationUsernameField.valid &&
+      addConfigurationPasswordField.valid
+    ) {
+      //Send the command to the server
+      socket.emit(
+        "insert_configuration",
+        JSON.stringify({
+          host: addConfigurationHostField.value,
+          username: addConfigurationUsernameField.value,
+          password: addConfigurationPasswordField.value,
+        })
+      );
 
-    //Reset the interface of the modal
-    addConfigurationHostField.value = "";
-    addConfigurationUsernameField.value = "";
-    addConfigurationPasswordField.value = "";
-    addConfigurationModal.style.display = "none";
+      //Reset the interface of the modal
+      addConfigurationHostField.value = "";
+      addConfigurationUsernameField.value = "";
+      addConfigurationPasswordField.value = "";
+      addConfigurationModal.style.display = "none";
+    } else {
+      //Show error message
+      alert("Incomplete configuration information");
+    }
   };
 
   //Close the update configuration modal
@@ -272,6 +303,31 @@ window.onload = function () {
     updateConfiguration(JSON.parse(configuration));
   });
 
+  updateConfigurationHostField.listen(
+    "input",
+    () =>
+      (updateConfigurationHostField.valid = updateConfigurationHostField.valid)
+  );
+  updateConfigurationHostField.valid = updateConfigurationHostField.valid;
+
+  updateConfigurationUsernameField.listen(
+    "input",
+    () =>
+      (updateConfigurationUsernameField.valid =
+        updateConfigurationUsernameField.valid)
+  );
+  updateConfigurationUsernameField.valid =
+    updateConfigurationUsernameField.valid;
+
+  updateConfigurationPasswordField.listen(
+    "input",
+    () =>
+      (updateConfigurationPasswordField.valid =
+        updateConfigurationPasswordField.valid)
+  );
+  updateConfigurationPasswordField.valid =
+    updateConfigurationPasswordField.valid;
+
   //Response on requested configuration data
   socket.on("response_configdb_data", (rawConfiguration) => {
     let configuration = JSON.parse(rawConfiguration);
@@ -283,21 +339,30 @@ window.onload = function () {
 
     //Send the update command to the server
     updateConfigurationSaveButton.onclick = function () {
-      socket.emit(
-        "update_configuration",
-        JSON.stringify({
-          oldhost: configuration.host,
-          host: updateConfigurationHostField.value,
-          username: updateConfigurationUsernameField.value,
-          password: updateConfigurationPasswordField.value,
-        })
-      );
+      if (
+        updateConfigurationHostField.valid &&
+        updateConfigurationUsernameField.valid &&
+        updateConfigurationPasswordField.valid
+      ) {
+        socket.emit(
+          "update_configuration",
+          JSON.stringify({
+            oldhost: configuration.host,
+            host: updateConfigurationHostField.value,
+            username: updateConfigurationUsernameField.value,
+            password: updateConfigurationPasswordField.value,
+          })
+        );
 
-      //Clear the interface and close the dialog
-      updateConfigurationHostField.value = "";
-      updateConfigurationUsernameField.value = "";
-      updateConfigurationPasswordField.value = "";
-      updateConfigurationModal.style.display = "none";
+        //Clear the interface and close the dialog
+        updateConfigurationHostField.value = "";
+        updateConfigurationUsernameField.value = "";
+        updateConfigurationPasswordField.value = "";
+        updateConfigurationModal.style.display = "none";
+      } else {
+        //Show error message
+        alert("Incomplete configuration information");
+      }
     };
   });
 
