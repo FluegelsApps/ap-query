@@ -100,7 +100,7 @@ class SSHConnection {
 
               this.timerId = setInterval(() => {
                 stream.write(monitoringCommand);
-              }, 1 * 5 * 1000);
+              }, 60 * 1000);
             } else {
               let content = data.toString().split(os.EOL);
 

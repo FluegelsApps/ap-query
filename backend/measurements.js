@@ -62,8 +62,8 @@ module.exports = {
     let part = "";
     while (downloadStatement.step()) {
       part = JSON.stringify(downloadStatement.getAsObject())
-        .replaceAll("{", "")
-        .replaceAll("}", "");
+        .replace("{", "")
+        .replace("}", "");
       let contentParts = part.split(",");
 
       let finalPart = "";
