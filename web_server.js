@@ -17,6 +17,7 @@ const command_update_configuration = "update_configuration";
 const command_start_connection = "start_connection";
 const command_stop_connection = "stop_connection";
 const command_delete_measurements = "delete_measurements";
+const command_replace_measurements = "replace_measurements";
 
 const notify_configuration_update = "notify_configdb_updated";
 const notify_measurements_update = "notify_measurements_updated";
@@ -125,6 +126,11 @@ module.exports = {
 
       socket.on(command_delete_measurements, function (args) {
         measurements.deleteMeasurements();
+        socket.emit(notify_measurements_update, measurements.getMeasurements());
+      });
+
+      socket.on(command_replace_measurements, function(data) {
+        measurements.replaceMeasurements(data);
         socket.emit(notify_measurements_update, measurements.getMeasurements());
       });
 

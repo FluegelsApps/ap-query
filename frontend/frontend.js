@@ -31,6 +31,8 @@ let updateConfigurationSaveButton;
 
 //Measurement Database Interface
 let deleteDatabaseButton;
+let uploadDatabaseButton;
+let uploadDatabaseInput;
 let measurementChartSelector;
 let measurementTimeSelector;
 let configurationTable;
@@ -140,6 +142,20 @@ window.onload = function () {
       downloadDataSelector.appendChild(element);
     }
   };
+
+  uploadDatabaseButton.onclick = function() {
+    $("#uploadInput").trigger("click");
+  };
+
+  uploadDatabaseInput.addEventListener("change", (event) => {
+    let file = event.target.files[0];
+    let reader = new FileReader();
+    reader.onload = (file) => {
+      if(confirm("Are you sure? This process will replace the data in the database."))
+        socket.emit("replace_measurements", reader.result);
+    };
+    reader.readAsText(file, "utf8");
+  }, false);
 
   //Close the download dialog
   downloadModalClose.onclick = function () {
@@ -414,6 +430,9 @@ function initialize() {
   );
 
   deleteDatabaseButton = document.getElementById("deleteDatabaseButton");
+  uploadDatabaseInput = document.getElementById("uploadInput");
+  uploadDatabaseButton = document.getElementById("uploadButton");
+
   measurementChartSelector = new mdc.select.MDCSelect(
     document.getElementById("measurementChartSelector")
   );
@@ -513,6 +532,7 @@ function updateMeasurements(measurements) {
 
   for (let i = 0; i < measurements.length; i++)
     if (
+      measurements[i].ap == selectedAP &&
       !timestamps.includes(measurements[i].timestamp) &&
       inTimeRange(measurements[i].timestamp)
     )
@@ -531,19 +551,17 @@ function updateMeasurements(measurements) {
     ) {
       let time = new Date(measurements[i].timestamp);
 
-      labels.push([
-        `${formatTime(time.getHours())}:${formatTime(
-          time.getMinutes()
-        )}:${formatTime(time.getSeconds())}`,
-        `${formatTime(time.getDay())}.${formatTime(
-          time.getMonth()
-        )}.${time.getFullYear()}`,
-      ]);
+      labels.push(time.toString().replace(" GMT+0100 (Central European Standard Time)", "").split(" "));
       for (let b = 0; b < 4; b++) if (values[b] == null) values[b] = [];
+
+      console.log(timestamps);
 
       let xIndex = 0;
       for (let a = 0; a < timestamps.length; a++) {
-        if (timestamps[a] == measurements[i].timestamp) xIndex = a;
+        if (timestamps[a] == measurements[i].timestamp) {
+          xIndex = a;
+          break;
+        }
       }
 
       values[0][xIndex] = measurements[i].current;
@@ -552,6 +570,8 @@ function updateMeasurements(measurements) {
       values[3][xIndex] = measurements[i].maximum;
     }
   }
+
+  console.log(values[0]);
 
   let currentColor = `rgb(20, 186, 219)`;
   measurementChart.data.datasets[0] = {

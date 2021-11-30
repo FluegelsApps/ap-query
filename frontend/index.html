@@ -228,6 +228,20 @@
       <button
         style="display: flex; margin-top: 10px"
         class="mdc-button mdc-button--raised mdc-button--leading"
+        id="uploadButton"
+      >
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true"
+          >upload</i
+        >
+        <span style="color: white" class="mdc-button__label"
+          >Upload Data</span
+        >
+      </button>
+
+      <button
+        style="display: flex; margin-top: 10px"
+        class="mdc-button mdc-button--raised mdc-button--leading"
         id="deleteDatabaseButton"
       >
         <span class="mdc-button__ripple"></span>
@@ -499,5 +513,7 @@
           </div>
         </div>
       </div>
+
+      <input type="file" id="uploadInput" style="opacity: 0;" accept=".csv,application/csv">
   </body>
 </html>
