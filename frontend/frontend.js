@@ -12,6 +12,14 @@ let exceptionModalCloseButton;
 let exceptionModalOrigin;
 let exceptionModalInstance;
 
+//Session Information Modal Interface
+let sessionInfoModal;
+let sessionInfoModalClose;
+let sessionInfoModalHostField;
+let sessionInfoModalStartedField;
+let sessionInfoModalTotalField;
+let sessionInfoModalNextField;
+
 //Add Configuration Modal Interface
 let addConfigurationButton;
 let addConfigurationModal;
@@ -35,14 +43,18 @@ let uploadDatabaseButton;
 let uploadDatabaseInput;
 let measurementChartSelector;
 let measurementTimeSelector;
+let measurementDisplaySwitch;
+let measurementDisplaySwitchParent;
 let configurationTable;
 
 //Variables
 var socket;
 var measurementChart;
+var measurementTable;
 var selectedAP = " ";
 var selectedTimeSpan = -1;
 var lastMeasurements;
+var displayType = "chart";
 
 const configurationTableSwitch = `<button
 class="mdc-switch mdc-switch--unselected config-state-switch"
@@ -56,22 +68,6 @@ aria-checked="false">
       <div class="mdc-elevation-overlay"></div>
     </div>
     <div class="mdc-switch__ripple"></div>
-    <div class="mdc-switch__icons">
-      <svg
-        class="mdc-switch__icon mdc-switch__icon--on"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M19.69,5.23L8.96,15.96l-4.23-4.23L2.96,13.5l6,6L21.46,7L19.69,5.23z"
-        />
-      </svg>
-      <svg
-        class="mdc-switch__icon mdc-switch__icon--off"
-        viewBox="0 0 24 24"
-      >
-        <path d="M20 13H4v-2h16v2z" />
-      </svg>
-    </div>
   </div>
 </div>
 </button>`;
@@ -83,6 +79,10 @@ edit
 <button onclick="removeConfiguration('$HOST$')" class="mdc-icon-button material-icons">
 <div class="mdc-icon-button__ripple"></div>
 delete_forever
+</button>
+<button id="info_button" onclick="showSessionInfo('$HOST$')" class="mdc-icon-button material-icons">
+<div class="mdc-icon-button__ripple"></div>
+info
 </button>`;
 
 const measurementSelectorItem = `<li
@@ -143,21 +143,29 @@ window.onload = function () {
     }
   };
 
-  uploadDatabaseButton.onclick = function() {
+  uploadDatabaseButton.onclick = function () {
     $("#uploadInput").trigger("click");
   };
 
   //Listen for file selection on update database button
-  uploadDatabaseInput.addEventListener("change", (event) => {
-    let file = event.target.files[0];
-    let reader = new FileReader();
-    reader.onload = (file) => {
-      //Confirm that the user wants to replace the current database
-      if(confirm("Are you sure? This process will replace the data in the database."))
-        socket.emit("replace_measurements", reader.result);
-    };
-    reader.readAsText(file, "utf8");
-  }, false);
+  uploadDatabaseInput.addEventListener(
+    "change",
+    (event) => {
+      let file = event.target.files[0];
+      let reader = new FileReader();
+      reader.onload = (file) => {
+        //Confirm that the user wants to replace the current database
+        if (
+          confirm(
+            "Are you sure? This process will replace the data in the database."
+          )
+        )
+          socket.emit("replace_measurements", reader.result);
+      };
+      reader.readAsText(file, "utf8");
+    },
+    false
+  );
 
   //Close the download dialog
   downloadModalClose.onclick = function () {
@@ -181,23 +189,33 @@ window.onload = function () {
   };
 
   //Close the exception dialog
-  exceptionModalClose.onclick = function () {
+  exceptionModalClose.onclick = () => {
     exceptionModal.style.display = "none";
   };
 
   //Close the exception dialog
-  exceptionModalCloseButton.onclick = function () {
+  exceptionModalCloseButton.onclick = () => {
     exceptionModal.style.display = "none";
   };
 
+  sessionInfoModalClose.onclick = () => {
+    sessionInfoModal.style.display = "none";
+  };
+
   //Open add configuration dialog
-  addConfigurationButton.onclick = function () {
+  addConfigurationButton.onclick = () => {
     addConfigurationModal.style.display = "block";
   };
 
   //Close add configuration dialog
-  addConfigurationModalClose.onclick = function () {
+  addConfigurationModalClose.onclick = () => {
     addConfigurationModal.style.display = "none";
+  };
+
+  //Listen for changes in display type
+  measurementDisplaySwitchParent.onclick = () => {
+    displayType = measurementDisplaySwitch.selected ? "table" : "chart";
+    updateMeasurements(lastMeasurements);
   };
 
   //Listen for changes to update the validation
@@ -226,7 +244,7 @@ window.onload = function () {
   addConfigurationPasswordField.valid = addConfigurationPasswordField.valid;
 
   //Add a configuration to the database
-  addConfigurationSaveButton.onclick = function () {
+  addConfigurationSaveButton.onclick = () => {
     if (
       addConfigurationHostField.valid &&
       addConfigurationUsernameField.valid &&
@@ -254,12 +272,12 @@ window.onload = function () {
   };
 
   //Close the update configuration modal
-  updateConfigurationModalClose.onclick = function () {
+  updateConfigurationModalClose.onclick = () => {
     updateConfigurationModal.style.display = "none";
   };
 
   //Delete the contents of the measurements database
-  deleteDatabaseButton.onclick = function () {
+  deleteDatabaseButton.onclick = () => {
     //Prompt the user to confirm the action
     if (confirm("Are you sure?")) {
       //Send the command to the web server
@@ -310,13 +328,14 @@ window.onload = function () {
   });
 
   //Close all modals when the window is clicked
-  window.onclick = function (event) {
+  window.onclick = (event) => {
     if (event.target == downloadModal) downloadModal.style.display = "none";
     if (event.target == addConfigurationModal)
       addConfigurationModal.style.display = "none";
     if (event.target == updateConfigurationModal)
       updateConfigurationModal.style.display = "none";
     if (event.target == exceptionModal) exceptionModal.style.display = "none";
+    if (event.target == sessionInfoModal) sessionInfoModal.style.display = "none";
   };
 
   //Notification when the configuration database has been updated
@@ -362,7 +381,7 @@ window.onload = function () {
     updateConfigurationUsernameField.value = configuration.user;
 
     //Send the update command to the server
-    updateConfigurationSaveButton.onclick = function () {
+    updateConfigurationSaveButton.onclick = () => {
       if (
         updateConfigurationHostField.valid &&
         updateConfigurationUsernameField.valid &&
@@ -406,6 +425,18 @@ window.onload = function () {
     anchor.remove();
   });
 
+  //Show the requested session information
+  socket.on("response_session_info", (rawInfo) => {
+    let sessionInformation = JSON.parse(rawInfo);
+
+    sessionInfoModalHostField.innerHTML = `Host: ${sessionInformation.host}`;
+    sessionInfoModalStartedField.innerHTML = `Connection started at: ${new Date(sessionInformation.started).toString()}`;
+    sessionInfoModalTotalField.innerHTML = `Total measures: ${sessionInformation.measures}`;
+    sessionInfoModalNextField.innerHTML = `Next measure: ${new Date(sessionInformation.nextmeasure).toString()}`;
+
+    sessionInfoModal.style.display = "block";
+  });
+
   //Show a dialog that notifies the user that an exception occurred
   socket.on("notify_exception", (rawException) => {
     exceptionModal.style.display = "block";
@@ -436,6 +467,13 @@ function initialize() {
   exceptionModalOrigin = document.getElementById("exceptionModalOrigin");
   exceptionModalInstance = document.getElementById("exceptionModalInstance");
 
+  sessionInfoModal = document.getElementById("sessionInfoModal");
+  sessionInfoModalClose = document.getElementById("sessionInfoModalClose");
+  sessionInfoModalHostField = document.getElementById("sessionInfoModalHostField");
+  sessionInfoModalStartedField = document.getElementById("sessionInfoModalStartedField");
+  sessionInfoModalTotalField = document.getElementById("sessionInfoModalTotalField");
+  sessionInfoModalNextField = document.getElementById("sessionInfoModalNextField");
+
   addConfigurationModal = document.getElementById("addConfigurationModal");
   addConfigurationButton = document.getElementById("addConfigurationButton");
   addConfigurationModalClose = document.getElementById(
@@ -445,6 +483,13 @@ function initialize() {
   deleteDatabaseButton = document.getElementById("deleteDatabaseButton");
   uploadDatabaseInput = document.getElementById("uploadInput");
   uploadDatabaseButton = document.getElementById("uploadButton");
+
+  measurementDisplaySwitchParent = document.getElementById(
+    "measurementDisplaySwitchParent"
+  );
+  measurementDisplaySwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector("#measurementDisplaySwitch")
+  );
 
   measurementChartSelector = new mdc.select.MDCSelect(
     document.getElementById("measurementChartSelector")
@@ -487,6 +532,8 @@ function initialize() {
   );
 
   configurationTable = document.getElementById("configurationTable");
+
+  measurementTable = document.getElementById("measurementTable");
 
   //Initialize the measurement chart
   measurementChart = new Chart(
@@ -531,7 +578,11 @@ function updateConfiguration(configurations) {
     let configActions = row.insertCell();
     configActions.innerHTML = configurationTableActions
       .replace("$HOST$", configurations[i].host)
+      .replace("$HOST$", configurations[i].host)
       .replace("$HOST$", configurations[i].host);
+
+    if(configurations[i].state == 0)
+      configActions.removeChild(configActions.children[2]);
   }
 }
 
@@ -544,86 +595,119 @@ function updateMeasurements(measurements) {
   let values = [];
   let timestamps = [];
 
-  for (let i = 0; i < measurements.length; i++)
+  document.getElementById("measurementChartParent").style.display =
+    displayType == "chart" ? "block" : "none";
+  document.getElementById("measurementTableParent").style.display =
+    displayType == "table" ? "block" : "none";
+  while(measurementTable.rows.length > 1) measurementTable.deleteRow(1);
+
+  for (let i = 0; i < measurements.length; i++) {
+    if (!accessPoints.includes(measurements[i].ap))
+      accessPoints[accessPoints.length] = measurements[i].ap;
+
     if (
       measurements[i].ap == selectedAP &&
       !timestamps.includes(measurements[i].timestamp) &&
       inTimeRange(measurements[i].timestamp)
     )
       timestamps.push(measurements[i].timestamp);
+  }
   timestamps.sort();
 
   for (let i = 0; i < measurements.length; i++) {
-    if (!accessPoints.includes(measurements[i].ap))
-      accessPoints[accessPoints.length] = measurements[i].ap;
-    if(selectedAP == " " && accessPoints != null && accessPoints.length > 0) {
+    if (selectedAP == " " && accessPoints != null && accessPoints.length > 0) {
       selectedAP = accessPoints[0];
       updateMeasurements(measurements);
       measurementChartSelector.value = selectedAP;
       return;
     }
-    
+
     if (
       measurements[i] != null &&
       measurements[i].ap != null &&
       selectedAP == measurements[i].ap &&
       inTimeRange(measurements[i].timestamp)
     ) {
-      let time = new Date(measurements[i].timestamp);
+      if (displayType == "chart") {
+        let time = new Date(measurements[i].timestamp);
 
-      labels.push(time.toString().replace(" GMT+0100 (Central European Standard Time)", "").split(" "));
-      for (let b = 0; b < 4; b++) if (values[b] == null) values[b] = [];
+        labels.push(
+          time
+            .toString()
+            .replace(" GMT+0100 (Central European Standard Time)", "")
+            .split(" ")
+        );
+        for (let b = 0; b < 4; b++) if (values[b] == null) values[b] = [];
 
-      console.log(timestamps);
-
-      let xIndex = 0;
-      for (let a = 0; a < timestamps.length; a++) {
-        if (timestamps[a] == measurements[i].timestamp) {
-          xIndex = a;
-          break;
+        let xIndex = 0;
+        for (let a = 0; a < timestamps.length; a++) {
+          if (timestamps[a] == measurements[i].timestamp) {
+            xIndex = a;
+            break;
+          }
         }
-      }
 
-      values[0][xIndex] = measurements[i].current;
-      values[1][xIndex] = measurements[i].average;
-      values[2][xIndex] = measurements[i].minimum;
-      values[3][xIndex] = measurements[i].maximum;
+        values[0][xIndex] = measurements[i].current;
+        values[1][xIndex] = measurements[i].average;
+        values[2][xIndex] = measurements[i].minimum;
+        values[3][xIndex] = measurements[i].maximum;
+      } else if (displayType == "table") {
+        let row = measurementTable.insertRow();
+        row.insertCell().innerHTML = new Date(measurements[i].timestamp).toString().replace(" GMT+0100 (Central European Standard Time)", "");
+        row.insertCell().innerHTML = measurements[i].ap;
+        row.insertCell().innerHTML = measurements[i].current + " mW";
+        row.insertCell().innerHTML = measurements[i].average + " mW";
+        row.insertCell().innerHTML = measurements[i].minimum + " mW";
+        row.insertCell().innerHTML = measurements[i].maximum + " mW";
+      }
     }
   }
 
-  let currentSet = measurementChart.data.datasets[0] != null ? measurementChart.data.datasets[0] : {
-    label: "Current",
-    backgroundColor: "rgb(20, 186, 219)",
-    borderColor: "rgb(20, 186, 219)",
-    data: undefined,
-  };
+  let currentSet =
+    measurementChart.data.datasets[0] != null
+      ? measurementChart.data.datasets[0]
+      : {
+          label: "Current",
+          backgroundColor: "rgb(20, 186, 219)",
+          borderColor: "rgb(20, 186, 219)",
+          data: undefined,
+        };
   currentSet.data = values[0];
   measurementChart.data.datasets[0] = currentSet;
 
-  let averageSet = measurementChart.data.datasets[1] != null ? measurementChart.data.datasets[1] : {
-    label: "Average",
-    backgroundColor: "rgb(219, 176, 20)",
-    borderColor: "rgb(219, 176, 20)",
-    data: undefined,
-  };
+  let averageSet =
+    measurementChart.data.datasets[1] != null
+      ? measurementChart.data.datasets[1]
+      : {
+          label: "Average",
+          backgroundColor: "rgb(219, 176, 20)",
+          borderColor: "rgb(219, 176, 20)",
+          data: undefined,
+        };
   averageSet.data = values[1];
   measurementChart.data.datasets[1] = averageSet;
 
-  let minimumSet = measurementChart.data.datasets[2] != null ? measurementChart.data.datasets[2] : {
-    label: "Minimum",
-    backgroundColor: "rgb(3, 252, 44)",
-    borderColor: "rgb(3, 252, 44)",
-    data: undefined,
-  };
+  let minimumSet =
+    measurementChart.data.datasets[2] != null
+      ? measurementChart.data.datasets[2]
+      : {
+          label: "Minimum",
+          backgroundColor: "rgb(3, 252, 44)",
+          borderColor: "rgb(3, 252, 44)",
+          data: undefined,
+        };
   minimumSet.data = values[2];
   measurementChart.data.datasets[2] = minimumSet;
 
-  let maximumSet = measurementChart.data.datasets[3] != null ? measurementChart.data.datasets[3] : {
-    label: "Maximum",
-    backgroundColor: "rgb(219, 20, 20)",
-    borderColor: "rgb(219, 20, 20)",
-    data: undefined,
-  };
+  let maximumSet =
+    measurementChart.data.datasets[3] != null
+      ? measurementChart.data.datasets[3]
+      : {
+          label: "Maximum",
+          backgroundColor: "rgb(219, 20, 20)",
+          borderColor: "rgb(219, 20, 20)",
+          data: undefined,
+        };
   maximumSet.data = values[3];
   measurementChart.data.datasets[3] = maximumSet;
 
@@ -654,6 +738,10 @@ function editConfiguration(host) {
   socket.emit("request_configdb_data", host);
 }
 
+function showSessionInfo(host) {
+  socket.emit("request_session_info", host);
+}
+
 function normalize(string) {
   while (string.includes(".")) string = string.replace(".", "");
   return string;
@@ -665,6 +753,6 @@ function formatTime(time) {
 
 function inTimeRange(time) {
   return (
-    new Date().getTime() - time < selectedTimeSpan || selectedTimeSpan == -1
+    new Date().getTime() - time <= selectedTimeSpan || selectedTimeSpan == -1
   );
 }

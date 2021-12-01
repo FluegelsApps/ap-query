@@ -8,6 +8,7 @@ const os = require("os");
 
 const measurements = require("./measurements.js");
 const config = require("./config.js");
+const { timeStamp } = require("console");
 
 var connections = [];
 
@@ -32,6 +33,10 @@ module.exports = {
       connections.splice(this.findConnectionIndex(configuration.host), 1);
     }
   },
+  getConnectionStats: function(host) {
+    if(this.hasConnection(host))
+      return connections[this.findConnectionIndex(host)].getStatistics();
+  },
   hasConnection: function (host) {
     return this.findConnection(host) != null;
   },
@@ -54,6 +59,10 @@ class SSHConnection {
   status = status_offline;
   timerId = 0;
   connected = false;
+  
+  stats_started = new Date().getTime();
+  stats_measures = 0;
+  stats_nextmeasure = new Date().getTime();;
 
   constructor(host, username, password) {
     this.host = host;
@@ -90,6 +99,8 @@ class SSHConnection {
             if (!this.connected) {
               this.status = status_online;
               this.connected = true;
+              this.stats_started = new Date().getTime();
+              this.stats_nextmeasure = new Date(new Date().getTime() + 60000).getTime();
 
               config.updateConfigurationStatus({
                 oldhost: credentials.host,
@@ -130,6 +141,9 @@ class SSHConnection {
 
                   let data = adjustedData.split(" ");
                   if (data.length == 6) {
+                    this.stats_measures++;
+                    this.stats_nextmeasure = new Date(new Date().getTime() + 60000).getTime();
+
                     //Adding the actual content
                     measurements.insertMeasurement(
                       new Date().getTime(),
@@ -165,6 +179,8 @@ class SSHConnection {
             origin: `Client: ${credentials.host}`,
           })
         );
+
+        console.log("Error occurred: " + JSON.stringify(error));
       })
       .connect(credentials);
   }
@@ -179,5 +195,15 @@ class SSHConnection {
       state: 0,
     });
     io.emit("notify_configdb_updated", config.getConfiguration());
+  }
+
+  getStatistics() {
+    return {
+      host: this.host,
+      status: this.status,
+      started: this.stats_started,
+      measures: this.stats_measures,
+      nextmeasure: this.stats_nextmeasure
+    };
   }
 }

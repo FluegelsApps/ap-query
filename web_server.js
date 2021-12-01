@@ -7,10 +7,6 @@ const certmanager = require("./backend/certmanager.js");
 
 const config = require("./backend/config.js");
 const measurements = require("./backend/measurements.js");
-const { nextTick } = require("process");
-
-const command_start_measurement = "start_measurement";
-const command_stop_measurement = "stop_measurement";
 
 const command_insert_configuration = "insert_configuration";
 const command_remove_configuration = "remove_configuration";
@@ -26,9 +22,11 @@ const notify_measurements_update = "notify_measurements_updated";
 
 const request_configuration_data = "request_configdb_data";
 const request_export_data = "request_exportdb_file";
+const request_session_information = "request_session_info";
 
 const response_configuration_data = "response_configdb_data";
 const response_export_data = "response_exportdb_file";
+const response_session_information = "response_session_info";
 
 module.exports = {
   launch: function () {
@@ -123,6 +121,10 @@ module.exports = {
           response_export_data,
           measurements.downloadMeasurements(JSON.parse(accessPoints))
         );
+      });
+
+      socket.on(request_session_information, function(host) {
+        socket.emit(response_session_information, JSON.stringify(ssh.getConnectionStats(host)));
       });
     });
 

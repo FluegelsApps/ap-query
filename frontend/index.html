@@ -207,8 +207,41 @@
         </div>
       </div>
 
-      <div style="margin-top: 20px;">
+      <div style="display: inline; text-align: center; margin-top: 5px;">
+        <p style="float: left;">Chart</p>
+
+        <div id="measurementDisplaySwitchParent" style="display: inline-block; margin-top: 15px;">
+          <button id="measurementDisplaySwitch" class="mdc-switch mdc-switch--unselected" type="button" role="switch" aria-checked="false">
+            <div class="mdc-switch__track"></div>
+            <div class="mdc-switch__handle-track">
+              <div class="mdc-switch__handle">
+                <div class="mdc-switch__shadow">
+                  <div class="mdc-elevation-overlay"></div>
+                </div>
+                <div class="mdc-switch__ripple"></div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <p style="float: right;">Table</p>
+      </div>
+
+      <div id="measurementChartParent" style="margin-top: 20px;">
         <canvas id="measurement-power-chart"></canvas>
+      </div>
+
+      <div id="measurementTableParent" style="margin-top: 20px; margin-bottom: 20px; max-height: 35em; overflow: scroll;">
+        <table id="measurementTable" width="100%">
+          <tr>
+            <th>Timestamp</th>
+            <th>AP Name</th>
+            <th>Current Power (in mW)</th>
+            <th>Average Power (in mW)</th>
+            <th>Minimum Power (in mW)</th>
+            <th>Maximum Power (in mW)</th>
+          </tr>
+        </table>
       </div>
 
       <button
@@ -510,6 +543,21 @@
             <span class="mdc-button__ripple"></span>
             <span class="mdc-button__label">Close</span>
           </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sessionInfoModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <span class="close" , id="sessionInfoModalClose">&times;</span>
+            <p style="color: white"><b>Session information</b></p>
+          </div>
+          <div class="modal-body">
+            <p id="sessionInfoModalHostField">Host: </p>
+            <p id="sessionInfoModalStartedField">Session started at: </p>
+            <p id="sessionInfoModalTotalField">Total measures: </p>
+            <p id="sessionInfoModalNextField">Next measure at: </p>
           </div>
         </div>
       </div>
