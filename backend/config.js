@@ -51,9 +51,11 @@ module.exports = {
     fetchStatement.bind();
 
     let configuration = "[\n";
-    while (fetchStatement.step())
-      configuration =
-        configuration + JSON.stringify(fetchStatement.getAsObject()) + ",";
+    while (fetchStatement.step()) {
+      let instance = fetchStatement.getAsObject();
+      configuration = configuration + JSON.stringify(instance).replace(`"password":"${instance.password},"`) + ",";
+    }
+
     configuration =
       configuration.substring(0, configuration.length - 1) + "\n]";
     return configuration;

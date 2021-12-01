@@ -1,11 +1,13 @@
-const http = require("http");
+const https = require("https");
 const express = require("express");
 const app = express();
 const { Server } = require("socket.io");
 const ssh = require("./backend/ssh.js");
+const certmanager = require("./backend/certmanager.js");
 
 const config = require("./backend/config.js");
 const measurements = require("./backend/measurements.js");
+const { nextTick } = require("process");
 
 const command_start_measurement = "start_measurement";
 const command_stop_measurement = "stop_measurement";
@@ -30,7 +32,10 @@ const response_export_data = "response_exportdb_file";
 
 module.exports = {
   launch: function () {
-    const server = http.createServer(app);
+    const server = https.createServer(
+      { key: certmanager.loadKey(), cert: certmanager.loadCertificate() },
+      app
+    );
     const io = new Server(server);
 
     //Web Page
@@ -54,9 +59,6 @@ module.exports = {
     app.get("/api/", (req, res) => {
       res.send("<h1>Power Measurement API</h1>");
     });
-    app.get("/api/aps", (req, res) => {
-      res.send("Access Points: 0");
-    });
     app.get("/api/data", (req, res) => {
       res.send(measurements.getMeasurements());
     });
@@ -70,31 +72,6 @@ module.exports = {
       //The user connected successfully
       socket.emit(notify_configuration_update, config.getConfiguration());
       socket.emit(notify_measurements_update, measurements.getMeasurements());
-
-      socket.on(command_start_measurement, function (credentialsJson) {
-        //Start measurement command received
-        let credentials = JSON.parse(credentialsJson);
-        console.log("Starting measurement with credentials:");
-        console.log("Host address: " + credentials.host);
-        console.log("Username: " + credentials.username);
-        console.log("Password: " + credentials.password);
-
-        ssh.host = credentials.host;
-        socket.emit("host_changed", ssh.host);
-        ssh.username = credentials.username;
-        socket.emit("username_changed", ssh.username);
-        ssh.password = credentials.password;
-        socket.emit("password_changed", ssh.password);
-
-        ssh.startMeasurement(socket);
-      });
-
-      socket.on(command_stop_measurement, function (args) {
-        //Stop measurement command received
-        console.log("Stopping measurement");
-
-        ssh.stopMeasurement(socket);
-      });
 
       socket.on(command_insert_configuration, function (rawConfiguration) {
         let configuration = JSON.parse(rawConfiguration);
@@ -129,7 +106,7 @@ module.exports = {
         socket.emit(notify_measurements_update, measurements.getMeasurements());
       });
 
-      socket.on(command_replace_measurements, function(data) {
+      socket.on(command_replace_measurements, function (data) {
         measurements.replaceMeasurements(data);
         socket.emit(notify_measurements_update, measurements.getMeasurements());
       });

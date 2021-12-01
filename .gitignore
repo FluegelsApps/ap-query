@@ -1,1 +1,4 @@
 *.sqlite
+*.pem
+*.crt
+*.key

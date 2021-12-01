@@ -4,3 +4,6 @@ Dockerfile
 .dockerignore
 measurements.sqlite
 configuration.sqlite
+ssl_key.pem
+ssl_certificate.crt
+assets/

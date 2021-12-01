@@ -147,10 +147,12 @@ window.onload = function () {
     $("#uploadInput").trigger("click");
   };
 
+  //Listen for file selection on update database button
   uploadDatabaseInput.addEventListener("change", (event) => {
     let file = event.target.files[0];
     let reader = new FileReader();
     reader.onload = (file) => {
+      //Confirm that the user wants to replace the current database
       if(confirm("Are you sure? This process will replace the data in the database."))
         socket.emit("replace_measurements", reader.result);
     };
@@ -198,12 +200,14 @@ window.onload = function () {
     addConfigurationModal.style.display = "none";
   };
 
+  //Listen for changes to update the validation
   addConfigurationHostField.listen(
     "input",
     () => (addConfigurationHostField.valid = addConfigurationHostField.valid)
   );
   addConfigurationHostField.valid = addConfigurationHostField.valid;
 
+  //Listen for changes to update the validation
   addConfigurationUsernameField.listen(
     "input",
     () =>
@@ -212,6 +216,7 @@ window.onload = function () {
   );
   addConfigurationUsernameField.valid = addConfigurationUsernameField.valid;
 
+  //Listen for changes to update the validation
   addConfigurationPasswordField.listen(
     "input",
     () =>
@@ -319,6 +324,7 @@ window.onload = function () {
     updateConfiguration(JSON.parse(configuration));
   });
 
+  //Listen for changes to update the validation
   updateConfigurationHostField.listen(
     "input",
     () =>
@@ -326,6 +332,7 @@ window.onload = function () {
   );
   updateConfigurationHostField.valid = updateConfigurationHostField.valid;
 
+  //Listen for changes to update the validation
   updateConfigurationUsernameField.listen(
     "input",
     () =>
@@ -335,6 +342,7 @@ window.onload = function () {
   updateConfigurationUsernameField.valid =
     updateConfigurationUsernameField.valid;
 
+  //Listen for changes to update the validation
   updateConfigurationPasswordField.listen(
     "input",
     () =>
@@ -360,6 +368,7 @@ window.onload = function () {
         updateConfigurationUsernameField.valid &&
         updateConfigurationPasswordField.valid
       ) {
+        //Send the updated configuration data to the server
         socket.emit(
           "update_configuration",
           JSON.stringify({
@@ -382,10 +391,12 @@ window.onload = function () {
     };
   });
 
+  //Update the measurements chart
   socket.on("notify_measurements_updated", (rawMeasurements) => {
     updateMeasurements(JSON.parse(rawMeasurements));
   });
 
+  //Download the received database file
   socket.on("response_exportdb_file", (content) => {
     let anchor = document.createElement("a");
     let blob = new Blob([content], { type: "text/csv" });
@@ -395,6 +406,7 @@ window.onload = function () {
     anchor.remove();
   });
 
+  //Show a dialog that notifies the user that an exception occurred
   socket.on("notify_exception", (rawException) => {
     exceptionModal.style.display = "block";
 
@@ -408,6 +420,7 @@ window.onload = function () {
   });
 };
 
+//Reference all views and variables
 function initialize() {
   downloadModal = document.getElementById("downloadModal");
   downloadButton = document.getElementById("downloadButton");
@@ -475,6 +488,7 @@ function initialize() {
 
   configurationTable = document.getElementById("configurationTable");
 
+  //Initialize the measurement chart
   measurementChart = new Chart(
     document.getElementById("measurement-power-chart"),
     {
@@ -542,7 +556,13 @@ function updateMeasurements(measurements) {
   for (let i = 0; i < measurements.length; i++) {
     if (!accessPoints.includes(measurements[i].ap))
       accessPoints[accessPoints.length] = measurements[i].ap;
-
+    if(selectedAP == " " && accessPoints != null && accessPoints.length > 0) {
+      selectedAP = accessPoints[0];
+      updateMeasurements(measurements);
+      measurementChartSelector.value = selectedAP;
+      return;
+    }
+    
     if (
       measurements[i] != null &&
       measurements[i].ap != null &&
@@ -571,39 +591,41 @@ function updateMeasurements(measurements) {
     }
   }
 
-  console.log(values[0]);
-
-  let currentColor = `rgb(20, 186, 219)`;
-  measurementChart.data.datasets[0] = {
+  let currentSet = measurementChart.data.datasets[0] != null ? measurementChart.data.datasets[0] : {
     label: "Current",
-    backgroundColor: currentColor,
-    borderColor: currentColor,
-    data: values[0],
+    backgroundColor: "rgb(20, 186, 219)",
+    borderColor: "rgb(20, 186, 219)",
+    data: undefined,
   };
+  currentSet.data = values[0];
+  measurementChart.data.datasets[0] = currentSet;
 
-  let averageColor = `rgb(219, 176, 20)`;
-  measurementChart.data.datasets[1] = {
+  let averageSet = measurementChart.data.datasets[1] != null ? measurementChart.data.datasets[1] : {
     label: "Average",
-    backgroundColor: averageColor,
-    borderColor: averageColor,
-    data: values[1],
+    backgroundColor: "rgb(219, 176, 20)",
+    borderColor: "rgb(219, 176, 20)",
+    data: undefined,
   };
+  averageSet.data = values[1];
+  measurementChart.data.datasets[1] = averageSet;
 
-  let minimumColor = `rgb(3, 252, 44)`;
-  measurementChart.data.datasets[2] = {
+  let minimumSet = measurementChart.data.datasets[2] != null ? measurementChart.data.datasets[2] : {
     label: "Minimum",
-    backgroundColor: minimumColor,
-    borderColor: minimumColor,
-    data: values[2],
+    backgroundColor: "rgb(3, 252, 44)",
+    borderColor: "rgb(3, 252, 44)",
+    data: undefined,
   };
+  minimumSet.data = values[2];
+  measurementChart.data.datasets[2] = minimumSet;
 
-  let maximumColor = `rgb(219, 20, 20)`;
-  measurementChart.data.datasets[3] = {
+  let maximumSet = measurementChart.data.datasets[3] != null ? measurementChart.data.datasets[3] : {
     label: "Maximum",
-    backgroundColor: maximumColor,
-    borderColor: maximumColor,
-    data: values[3],
+    backgroundColor: "rgb(219, 20, 20)",
+    borderColor: "rgb(219, 20, 20)",
+    data: undefined,
   };
+  maximumSet.data = values[3];
+  measurementChart.data.datasets[3] = maximumSet;
 
   let parent = document.getElementById("measurementChartSelectorParent");
   if (accessPoints.length != parent.children.length - 1) {
