@@ -126,8 +126,8 @@ window.onload = function () {
     downloadModal.style.display = "block";
 
     //Remove all children
-    for (let i = 0; i < downloadDataSelector.children.length; i++)
-      downloadDataSelector.removeChild(downloadDataSelector.children[i]);
+    while (downloadDataSelector.children.length > 0)
+      downloadDataSelector.removeChild(0);
 
     //Collect a list of all access points
     accessPoints = [];
@@ -335,7 +335,8 @@ window.onload = function () {
     if (event.target == updateConfigurationModal)
       updateConfigurationModal.style.display = "none";
     if (event.target == exceptionModal) exceptionModal.style.display = "none";
-    if (event.target == sessionInfoModal) sessionInfoModal.style.display = "none";
+    if (event.target == sessionInfoModal)
+      sessionInfoModal.style.display = "none";
   };
 
   //Notification when the configuration database has been updated
@@ -430,9 +431,13 @@ window.onload = function () {
     let sessionInformation = JSON.parse(rawInfo);
 
     sessionInfoModalHostField.innerHTML = `Host: ${sessionInformation.host}`;
-    sessionInfoModalStartedField.innerHTML = `Connection started at: ${new Date(sessionInformation.started).toString()}`;
+    sessionInfoModalStartedField.innerHTML = `Connection started at: ${new Date(
+      sessionInformation.started
+    ).toString()}`;
     sessionInfoModalTotalField.innerHTML = `Total measures: ${sessionInformation.measures}`;
-    sessionInfoModalNextField.innerHTML = `Next measure: ${new Date(sessionInformation.nextmeasure).toString()}`;
+    sessionInfoModalNextField.innerHTML = `Next measure: ${new Date(
+      sessionInformation.nextmeasure
+    ).toString()}`;
 
     sessionInfoModal.style.display = "block";
   });
@@ -469,10 +474,18 @@ function initialize() {
 
   sessionInfoModal = document.getElementById("sessionInfoModal");
   sessionInfoModalClose = document.getElementById("sessionInfoModalClose");
-  sessionInfoModalHostField = document.getElementById("sessionInfoModalHostField");
-  sessionInfoModalStartedField = document.getElementById("sessionInfoModalStartedField");
-  sessionInfoModalTotalField = document.getElementById("sessionInfoModalTotalField");
-  sessionInfoModalNextField = document.getElementById("sessionInfoModalNextField");
+  sessionInfoModalHostField = document.getElementById(
+    "sessionInfoModalHostField"
+  );
+  sessionInfoModalStartedField = document.getElementById(
+    "sessionInfoModalStartedField"
+  );
+  sessionInfoModalTotalField = document.getElementById(
+    "sessionInfoModalTotalField"
+  );
+  sessionInfoModalNextField = document.getElementById(
+    "sessionInfoModalNextField"
+  );
 
   addConfigurationModal = document.getElementById("addConfigurationModal");
   addConfigurationButton = document.getElementById("addConfigurationButton");
@@ -581,7 +594,7 @@ function updateConfiguration(configurations) {
       .replace("$HOST$", configurations[i].host)
       .replace("$HOST$", configurations[i].host);
 
-    if(configurations[i].state == 0)
+    if (configurations[i].state == 0)
       configActions.removeChild(configActions.children[2]);
   }
 }
@@ -599,7 +612,7 @@ function updateMeasurements(measurements) {
     displayType == "chart" ? "block" : "none";
   document.getElementById("measurementTableParent").style.display =
     displayType == "table" ? "block" : "none";
-  while(measurementTable.rows.length > 1) measurementTable.deleteRow(1);
+  while (measurementTable.rows.length > 1) measurementTable.deleteRow(1);
 
   for (let i = 0; i < measurements.length; i++) {
     if (!accessPoints.includes(measurements[i].ap))
@@ -631,12 +644,7 @@ function updateMeasurements(measurements) {
       if (displayType == "chart") {
         let time = new Date(measurements[i].timestamp);
 
-        labels.push(
-          time
-            .toString()
-            .replace(" GMT+0100 (Central European Standard Time)", "")
-            .split(" ")
-        );
+        labels.push(time.toLocaleString());
         for (let b = 0; b < 4; b++) if (values[b] == null) values[b] = [];
 
         let xIndex = 0;
@@ -653,12 +661,14 @@ function updateMeasurements(measurements) {
         values[3][xIndex] = measurements[i].maximum;
       } else if (displayType == "table") {
         let row = measurementTable.insertRow();
-        row.insertCell().innerHTML = new Date(measurements[i].timestamp).toString().replace(" GMT+0100 (Central European Standard Time)", "");
+        row.insertCell().innerHTML = new Date(
+          measurements[i].timestamp
+        ).toLocaleString().replace(", ", " ");
         row.insertCell().innerHTML = measurements[i].ap;
-        row.insertCell().innerHTML = measurements[i].current + " mW";
-        row.insertCell().innerHTML = measurements[i].average + " mW";
-        row.insertCell().innerHTML = measurements[i].minimum + " mW";
-        row.insertCell().innerHTML = measurements[i].maximum + " mW";
+        row.insertCell().innerHTML = measurements[i].current;
+        row.insertCell().innerHTML = measurements[i].average;
+        row.insertCell().innerHTML = measurements[i].minimum;
+        row.insertCell().innerHTML = measurements[i].maximum;
       }
     }
   }

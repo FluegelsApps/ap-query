@@ -73,10 +73,10 @@ module.exports = {
 
         if (i == 0) {
           let date = new Date(parseInt(part));
-          part = `"${date.toString()}"`;
+          part = `"${date.toLocaleString().replace(", ", " ")}"`;
         }
 
-        if (i > 2) part = '"' + part + ' mW"';
+        if (i > 2) part = '"' + part + '"';
 
         if (i <= 5) part = part + ",";
         finalPart = finalPart + part;
