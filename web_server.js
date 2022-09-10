@@ -73,10 +73,15 @@ module.exports = {
 
       socket.on(command_insert_configuration, function (rawConfiguration) {
         let configuration = JSON.parse(rawConfiguration);
+        console.log(configuration);
+
         config.insertConfiguration(
           configuration.host,
           configuration.username,
-          configuration.password
+          configuration.password,
+          configuration.queryInterval,
+          configuration.powerMonitoring,
+          configuration.gpsMonitoring
         );
         io.emit(notify_configuration_update, config.getConfiguration());
       });

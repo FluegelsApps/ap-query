@@ -27,6 +27,9 @@ let addConfigurationModalClose;
 let addConfigurationHostField;
 let addConfigurationUsernameField;
 let addConfigurationPasswordField;
+let addConfigurationQueryIntervalField;
+let addConfigurationPowerMonitoringSwitch;
+let addConfigurationGPSMonitoringSwitch;
 let addConfigurationSaveButton;
 
 //Update Configuration Modal Interface
@@ -35,6 +38,9 @@ let updateConfigurationModalClose;
 let updateConfigurationHostField;
 let updateConfigurationUsernameField;
 let updateConfigurationPasswordField;
+let updateConfigurationQueryIntervalField;
+let updateConfigurationPowerMonitoringSwitch;
+let updateConfigurationGPSMonitoringSwitch;
 let updateConfigurationSaveButton;
 
 //Measurement Database Interface
@@ -84,6 +90,9 @@ delete_forever
 <div class="mdc-icon-button__ripple"></div>
 info
 </button>`;
+
+const configurationTableMonitorings = `<span style="display: $POWERMONITORING$" class="material-icons">bolt</span>
+<span style="display: $GPSMONITORING$" class="material-icons">near_me</span>`;
 
 const measurementSelectorItem = `<li
 class="mdc-list-item"
@@ -229,8 +238,8 @@ window.onload = function () {
   addConfigurationUsernameField.listen(
     "input",
     () =>
-      (addConfigurationUsernameField.valid =
-        addConfigurationUsernameField.valid)
+    (addConfigurationUsernameField.valid =
+      addConfigurationUsernameField.valid)
   );
   addConfigurationUsernameField.valid = addConfigurationUsernameField.valid;
 
@@ -238,10 +247,18 @@ window.onload = function () {
   addConfigurationPasswordField.listen(
     "input",
     () =>
-      (addConfigurationPasswordField.valid =
-        addConfigurationPasswordField.valid)
+    (addConfigurationPasswordField.valid =
+      addConfigurationPasswordField.valid)
   );
   addConfigurationPasswordField.valid = addConfigurationPasswordField.valid;
+
+  addConfigurationQueryIntervalField.listen(
+    "input",
+    () => (addConfigurationQueryIntervalField.valid =
+      !isNaN(addConfigurationQueryIntervalField.value) &&
+      addConfigurationQueryIntervalField.value.length > 0)
+  );
+  addConfigurationQueryIntervalField.valid = addConfigurationQueryIntervalField.valid;
 
   //Add a configuration to the database
   addConfigurationSaveButton.onclick = () => {
@@ -257,6 +274,9 @@ window.onload = function () {
           host: addConfigurationHostField.value,
           username: addConfigurationUsernameField.value,
           password: addConfigurationPasswordField.value,
+          queryInterval: parseInt(addConfigurationQueryIntervalField.value) * 1000,
+          powerMonitoring: addConfigurationPowerMonitoringSwitch.selected,
+          gpsMonitoring: addConfigurationGPSMonitoringSwitch.selected
         })
       );
 
@@ -264,6 +284,9 @@ window.onload = function () {
       addConfigurationHostField.value = "";
       addConfigurationUsernameField.value = "";
       addConfigurationPasswordField.value = "";
+      addConfigurationQueryIntervalField.value = "";
+      addConfigurationPowerMonitoringSwitch.selected = false;
+      addConfigurationGPSMonitoringSwitch.selected = false;
       addConfigurationModal.style.display = "none";
     } else {
       //Show error message
@@ -356,8 +379,8 @@ window.onload = function () {
   updateConfigurationUsernameField.listen(
     "input",
     () =>
-      (updateConfigurationUsernameField.valid =
-        updateConfigurationUsernameField.valid)
+    (updateConfigurationUsernameField.valid =
+      updateConfigurationUsernameField.valid)
   );
   updateConfigurationUsernameField.valid =
     updateConfigurationUsernameField.valid;
@@ -366,11 +389,19 @@ window.onload = function () {
   updateConfigurationPasswordField.listen(
     "input",
     () =>
-      (updateConfigurationPasswordField.valid =
-        updateConfigurationPasswordField.valid)
+    (updateConfigurationPasswordField.valid =
+      updateConfigurationPasswordField.valid)
   );
   updateConfigurationPasswordField.valid =
     updateConfigurationPasswordField.valid;
+
+  updateConfigurationQueryIntervalField.listen(
+    "input",
+    () => (updateConfigurationQueryIntervalField.valid =
+      !isNaN(updateConfigurationQueryIntervalField.value) &&
+      updateConfigurationQueryIntervalField.value.length > 0)
+  );
+  updateConfigurationQueryIntervalField.valid = updateConfigurationQueryIntervalField.valid;
 
   //Response on requested configuration data
   socket.on("response_configdb_data", (rawConfiguration) => {
@@ -380,6 +411,9 @@ window.onload = function () {
     updateConfigurationModal.style.display = "block";
     updateConfigurationHostField.value = configuration.host;
     updateConfigurationUsernameField.value = configuration.user;
+    updateConfigurationQueryIntervalField.value = configuration.queryInterval;
+    updateConfigurationPowerMonitoringSwitch.selected = configuration.powerMonitoring;
+    updateConfigurationGPSMonitoringSwitch.selected = configuration.gpsMonitoring;
 
     //Send the update command to the server
     updateConfigurationSaveButton.onclick = () => {
@@ -396,6 +430,9 @@ window.onload = function () {
             host: updateConfigurationHostField.value,
             username: updateConfigurationUsernameField.value,
             password: updateConfigurationPasswordField.value,
+            queryInterval: parseInt(updateConfigurationQueryIntervalField.value) * 1000,
+            powerMonitoring: updateConfigurationPowerMonitoringSwitch.selected,
+            gpsMonitoring: updateConfigurationGPSMonitoringSwitch.selected
           })
         );
 
@@ -403,6 +440,9 @@ window.onload = function () {
         updateConfigurationHostField.value = "";
         updateConfigurationUsernameField.value = "";
         updateConfigurationPasswordField.value = "";
+        updateConfigurationQueryIntervalField.value = "";
+        updateConfigurationPowerMonitoringSwitch.selected = false;
+        updateConfigurationGPSMonitoringSwitch.selected = false;
         updateConfigurationModal.style.display = "none";
       } else {
         //Show error message
@@ -520,6 +560,15 @@ function initialize() {
   addConfigurationPasswordField = new mdc.textField.MDCTextField(
     document.querySelector("#addConfigurationPasswordField")
   );
+  addConfigurationQueryIntervalField = new mdc.textField.MDCTextField(
+    document.querySelector("#addConfigurationQueryIntervalField")
+  );
+  addConfigurationPowerMonitoringSwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector("#power-monitoring-switch")
+  );
+  addConfigurationGPSMonitoringSwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector("#gps-data-monitoring-switch")
+  );
   addConfigurationSaveButton = document.getElementById(
     "addConfigurationSaveButton"
   );
@@ -539,6 +588,15 @@ function initialize() {
   );
   updateConfigurationPasswordField = new mdc.textField.MDCTextField(
     document.querySelector("#updateConfigurationPasswordField")
+  );
+  updateConfigurationQueryIntervalField = new mdc.textField.MDCTextField(
+    document.querySelector("#updateConfigurationQueryIntervalField")
+  );
+  updateConfigurationPowerMonitoringSwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector('#update-power-monitoring-switch')
+  );
+  updateConfigurationGPSMonitoringSwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector('#update-gps-data-monitoring-switch')
   );
   updateConfigurationSaveButton = document.getElementById(
     "updateConfigurationSaveButton"
@@ -587,6 +645,11 @@ function updateConfiguration(configurations) {
         socket.emit("stop_connection", configurations[i]);
       }
     };
+
+    let configMonitorings = row.insertCell();
+    configMonitorings.innerHTML = configurationTableMonitorings
+      .replace("$POWERMONITORING$", configurations[i].powerMonitoring ? "inline" : "none")
+      .replace("$GPSMONITORING$", configurations[i].gpsMonitoring ? "inline" : "none");
 
     let configActions = row.insertCell();
     configActions.innerHTML = configurationTableActions
@@ -677,11 +740,11 @@ function updateMeasurements(measurements) {
     measurementChart.data.datasets[0] != null
       ? measurementChart.data.datasets[0]
       : {
-          label: "Current",
-          backgroundColor: "rgb(20, 186, 219)",
-          borderColor: "rgb(20, 186, 219)",
-          data: undefined,
-        };
+        label: "Current",
+        backgroundColor: "rgb(20, 186, 219)",
+        borderColor: "rgb(20, 186, 219)",
+        data: undefined,
+      };
   currentSet.data = values[0];
   measurementChart.data.datasets[0] = currentSet;
 
@@ -689,11 +752,11 @@ function updateMeasurements(measurements) {
     measurementChart.data.datasets[1] != null
       ? measurementChart.data.datasets[1]
       : {
-          label: "Average",
-          backgroundColor: "rgb(219, 176, 20)",
-          borderColor: "rgb(219, 176, 20)",
-          data: undefined,
-        };
+        label: "Average",
+        backgroundColor: "rgb(219, 176, 20)",
+        borderColor: "rgb(219, 176, 20)",
+        data: undefined,
+      };
   averageSet.data = values[1];
   measurementChart.data.datasets[1] = averageSet;
 
@@ -701,11 +764,11 @@ function updateMeasurements(measurements) {
     measurementChart.data.datasets[2] != null
       ? measurementChart.data.datasets[2]
       : {
-          label: "Minimum",
-          backgroundColor: "rgb(3, 252, 44)",
-          borderColor: "rgb(3, 252, 44)",
-          data: undefined,
-        };
+        label: "Minimum",
+        backgroundColor: "rgb(3, 252, 44)",
+        borderColor: "rgb(3, 252, 44)",
+        data: undefined,
+      };
   minimumSet.data = values[2];
   measurementChart.data.datasets[2] = minimumSet;
 
@@ -713,11 +776,11 @@ function updateMeasurements(measurements) {
     measurementChart.data.datasets[3] != null
       ? measurementChart.data.datasets[3]
       : {
-          label: "Maximum",
-          backgroundColor: "rgb(219, 20, 20)",
-          borderColor: "rgb(219, 20, 20)",
-          data: undefined,
-        };
+        label: "Maximum",
+        backgroundColor: "rgb(219, 20, 20)",
+        borderColor: "rgb(219, 20, 20)",
+        data: undefined,
+      };
   maximumSet.data = values[3];
   measurementChart.data.datasets[3] = maximumSet;
 

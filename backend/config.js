@@ -12,6 +12,11 @@ module.exports = {
      * Host address
      * Username
      * Password
+     * Status
+     * State
+     * Query Interval
+     * Enable Power Monitoring
+     * Enable GPS Monitoring
      */
 
     db().then(function (SQL) {
@@ -20,7 +25,7 @@ module.exports = {
         ? new SQL.Database(fs.readFileSync(configurationDatabasePath))
         : new SQL.Database();
       configurationDatabase.run(
-        "CREATE TABLE IF NOT EXISTS configuration (key int, host string, user string, password string, status string, state int);"
+        "CREATE TABLE IF NOT EXISTS configuration (key int, host string, user string, password string, status string, state int, queryInterval int, powerMonitoring boolean, gpsMonitoring boolean);"
       );
 
       const initializeStatement = configurationDatabase.prepare(
@@ -31,9 +36,7 @@ module.exports = {
 
       while (initializeStatement.step())
         configurationDatabase.run(
-          `UPDATE configuration SET status = 'Offline', state = 0 WHERE host = '${
-            initializeStatement.getAsObject().host
-          }';`
+          `UPDATE configuration SET status = 'Offline', state = 0 WHERE host = '${initializeStatement.getAsObject().host}';`
         );
     });
   },
@@ -63,9 +66,16 @@ module.exports = {
   getConfigurationAmount: function () {
     return this.getConfiguration().split("\n").length - 2;
   },
-  insertConfiguration: function (host, user, password) {
+  insertConfiguration: function (
+    host,
+    user,
+    password,
+    queryInterval,
+    powerMonitoring,
+    gpsMonitoring
+  ) {
     configurationDatabase.run(
-      `INSERT INTO configuration VALUES (${this.getConfigurationAmount()}, '${host}', '${user}', '${password}', "Offline", 0);`
+      `INSERT INTO configuration VALUES (${this.getConfigurationAmount()}, '${host}', '${user}', '${password}', "Offline", 0, ${queryInterval}, ${powerMonitoring}, ${gpsMonitoring});`
     );
     this.saveInternal();
   },
@@ -77,7 +87,7 @@ module.exports = {
   },
   updateConfiguration: function (update) {
     configurationDatabase.run(
-      `UPDATE configuration SET host = '${update.host}', user = '${update.username}', password = '${update.password}' WHERE host = '${update.oldhost}';`
+      `UPDATE configuration SET host = '${update.host}', user = '${update.username}', password = '${update.password}', queryInterval = ${update.queryInterval}, powerMonitoring = ${update.powerMonitoring}, gpsMonitoring = ${update.gpsMonitoring} WHERE host = '${update.oldhost}';`
     );
     this.saveInternal();
   },

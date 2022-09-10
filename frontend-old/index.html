@@ -27,6 +27,7 @@
             <th>Host</th>
             <th>Status</th>
             <th>Enabled</th>
+            <th>Monitoring</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -54,7 +55,10 @@
     >
       <h3>Measurement Details</h3>
 
-      <div id="measurementChartSelector" class="mdc-select mdc-select--outlined">
+      <div
+        id="measurementChartSelector"
+        class="mdc-select mdc-select--outlined"
+      >
         <div class="mdc-select__anchor" aria-labelledby="outlined-select-label">
           <span class="mdc-notched-outline">
             <span class="mdc-notched-outline__leading"></span>
@@ -94,12 +98,14 @@
         </div>
 
         <div
-          class="
-            mdc-select__menu
-            mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth
-          "
+          class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth"
         >
-          <ul class="mdc-list" id="measurementChartSelectorParent" role="listbox" aria-label="Food picker listbox">
+          <ul
+            class="mdc-list"
+            id="measurementChartSelectorParent"
+            role="listbox"
+            aria-label="Food picker listbox"
+          >
             <li
               class="mdc-list-item mdc-list-item--selected"
               aria-selected="true"
@@ -113,7 +119,11 @@
         </div>
       </div>
 
-      <div id="measurementTimeSelector" class="mdc-select mdc-select--outlined" style="margin-top: 10px;">
+      <div
+        id="measurementTimeSelector"
+        class="mdc-select mdc-select--outlined"
+        style="margin-top: 10px"
+      >
         <div class="mdc-select__anchor" aria-labelledby="outlined-select-label">
           <span class="mdc-notched-outline">
             <span class="mdc-notched-outline__leading"></span>
@@ -153,10 +163,7 @@
         </div>
 
         <div
-          class="
-            mdc-select__menu
-            mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth
-          "
+          class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth"
         >
           <ul class="mdc-list" role="listbox" aria-label="Food picker listbox">
             <li
@@ -167,51 +174,78 @@
             >
               <span class="mdc-list-item__ripple"></span>
             </li>
-            <li class="mdc-list-item" aria-selected="false" data-value="ten_minutes" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Last 10 minutes
-                </span>
-              </li>
-              <li class="mdc-list-item" aria-selected="false" data-value="hour" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Last hour
-                </span>
-              </li>
-              <li class="mdc-list-item" aria-selected="false" data-value="twelve_hours" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Last 12 hours
-                </span>
-              </li>
-              <li class="mdc-list-item" aria-selected="false" data-value="day" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Last day
-                </span>
-              </li>
-              <li class="mdc-list-item" aria-selected="false" data-value="week" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Last week
-                </span>
-              </li>
-              <li class="mdc-list-item" aria-selected="false" data-value="all" role="option">
-                <span class="mdc-list-item__ripple"></span>
-                <span class="mdc-list-item__text">
-                  Entire timespan
-                </span>
-              </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="ten_minutes"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Last 10 minutes </span>
+            </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="hour"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Last hour </span>
+            </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="twelve_hours"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Last 12 hours </span>
+            </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="day"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Last day </span>
+            </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="week"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Last week </span>
+            </li>
+            <li
+              class="mdc-list-item"
+              aria-selected="false"
+              data-value="all"
+              role="option"
+            >
+              <span class="mdc-list-item__ripple"></span>
+              <span class="mdc-list-item__text"> Entire timespan </span>
+            </li>
           </ul>
         </div>
       </div>
 
-      <div style="display: inline; text-align: center; margin-top: 5px;">
-        <p style="float: left;">Chart</p>
+      <div style="display: inline; text-align: center; margin-top: 5px">
+        <p style="float: left">Chart</p>
 
-        <div id="measurementDisplaySwitchParent" style="display: inline-block; margin-top: 15px;">
-          <button id="measurementDisplaySwitch" class="mdc-switch mdc-switch--unselected" type="button" role="switch" aria-checked="false">
+        <div
+          id="measurementDisplaySwitchParent"
+          style="display: inline-block; margin-top: 15px"
+        >
+          <button
+            id="measurementDisplaySwitch"
+            class="mdc-switch mdc-switch--unselected"
+            type="button"
+            role="switch"
+            aria-checked="false"
+          >
             <div class="mdc-switch__track"></div>
             <div class="mdc-switch__handle-track">
               <div class="mdc-switch__handle">
@@ -224,14 +258,22 @@
           </button>
         </div>
 
-        <p style="float: right;">Table</p>
+        <p style="float: right">Table</p>
       </div>
 
-      <div id="measurementChartParent" style="margin-top: 20px;">
+      <div id="measurementChartParent" style="margin-top: 20px">
         <canvas id="measurement-power-chart"></canvas>
       </div>
 
-      <div id="measurementTableParent" style="margin-top: 20px; margin-bottom: 20px; max-height: 35em; overflow: scroll;">
+      <div
+        id="measurementTableParent"
+        style="
+          margin-top: 20px;
+          margin-bottom: 20px;
+          max-height: 35em;
+          overflow: scroll;
+        "
+      >
         <table id="measurementTable" width="100%">
           <tr>
             <th>Timestamp</th>
@@ -264,12 +306,8 @@
         id="uploadButton"
       >
         <span class="mdc-button__ripple"></span>
-        <i class="material-icons mdc-button__icon" aria-hidden="true"
-          >upload</i
-        >
-        <span style="color: white" class="mdc-button__label"
-          >Upload Data</span
-        >
+        <i class="material-icons mdc-button__icon" aria-hidden="true">upload</i>
+        <span style="color: white" class="mdc-button__label">Upload Data</span>
       </button>
 
       <button
@@ -308,21 +346,24 @@
               </span>
               <span class="mdc-notched-outline__trailing"></span>
             </span>
-            
+
             <input
               type="text"
               class="mdc-text-field__input"
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
+          </div>
 
           <label
             style="margin-top: 10px"
@@ -344,14 +385,17 @@
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
+          </div>
 
           <label
             style="margin-top: 10px"
@@ -373,14 +417,114 @@
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
+          </div>
+
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="addConfigurationQueryIntervalField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Query Interval (in seconds)</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+              aria-controls="my-helper-id"
+              aria-describedby="my-helper-id"
+              required
+              minlength="1"
+            />
+          </label>
+          <div class="mdc-text-field-helper-line">
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
+            </div>
+          </div>
+
+          <div
+            id="power-monitoring-switch-parent"
+            style="
+              display: flex;
+              margin-left: 10px;
+              margin-right: 10px;
+              margin-top: 15px;
+              margin-bottom: 15px;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <label for="power-monitoring-switch">Power Monitoring</label>
+            <button
+              id="power-monitoring-switch"
+              class="mdc-switch mdc-switch--unselected"
+              type="button"
+              role="switch"
+              aria-checked="false"
+            >
+              <div class="mdc-switch__track"></div>
+              <div class="mdc-switch__handle-track">
+                <div class="mdc-switch__handle">
+                  <div class="mdc-switch__shadow">
+                    <div class="mdc-elevation-overlay"></div>
+                  </div>
+                  <div class="mdc-switch__ripple"></div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="gps-data-monitoring-switch-parent"
+            style="
+              display: flex;
+              margin-left: 10px;
+              margin-right: 10px;
+              margin-top: 15px;
+              margin-bottom: 15px;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <label for="gps-data-monitoring-switch">GPS Data Monitoring</label>
+            <button
+              id="gps-data-monitoring-switch"
+              class="mdc-switch mdc-switch--unselected"
+              type="button"
+              role="switch"
+              aria-checked="false"
+            >
+              <div class="mdc-switch__track"></div>
+              <div class="mdc-switch__handle-track">
+                <div class="mdc-switch__handle">
+                  <div class="mdc-switch__shadow">
+                    <div class="mdc-elevation-overlay"></div>
+                  </div>
+                  <div class="mdc-switch__ripple"></div>
+                </div>
+              </div>
+            </button>
+          </div>
 
           <button
             style="display: flex; margin-bottom: 10px; margin-top: 10px"
@@ -423,14 +567,17 @@
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
+          </div>
 
           <label
             style="margin-top: 10px"
@@ -452,15 +599,18 @@
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
-          
+          </div>
+
           <label
             style="margin-top: 10px"
             class="mdc-text-field mdc-text-field--outlined"
@@ -481,14 +631,116 @@
               aria-labelledby="my-label-id"
               aria-controls="my-helper-id"
               aria-describedby="my-helper-id"
-              required minlength="1"
+              required
+              minlength="1"
             />
           </label>
           <div class="mdc-text-field-helper-line">
-            <div class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg">
-                Field cannot remain empty
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
             </div>
-         </div>
+          </div>
+
+          <label
+            style="margin-top: 10px"
+            class="mdc-text-field mdc-text-field--outlined"
+            id="updateConfigurationQueryIntervalField"
+          >
+            <span class="mdc-notched-outline">
+              <span class="mdc-notched-outline__leading"></span>
+              <span class="mdc-notched-outline__notch">
+                <span class="mdc-floating-label" id="my-label-id"
+                  >Query Interval (in seconds)</span
+                >
+              </span>
+              <span class="mdc-notched-outline__trailing"></span>
+            </span>
+
+            <input
+              type="text"
+              class="mdc-text-field__input"
+              aria-labelledby="my-label-id"
+              aria-controls="my-helper-id"
+              aria-describedby="my-helper-id"
+              required
+              minlength="1"
+            />
+          </label>
+          <div class="mdc-text-field-helper-line">
+            <div
+              class="mdc-text-field-helper-text mdc-text-field-helper-text--validation-msg"
+            >
+              Field cannot remain empty
+            </div>
+          </div>
+
+          <div
+            id="update-power-monitoring-switch-parent"
+            style="
+              display: flex;
+              margin-left: 10px;
+              margin-right: 10px;
+              margin-top: 15px;
+              margin-bottom: 15px;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <label for="update-power-monitoring-switch">Power Monitoring</label>
+            <button
+              id="update-power-monitoring-switch"
+              class="mdc-switch mdc-switch--unselected"
+              type="button"
+              role="switch"
+              aria-checked="false"
+            >
+              <div class="mdc-switch__track"></div>
+              <div class="mdc-switch__handle-track">
+                <div class="mdc-switch__handle">
+                  <div class="mdc-switch__shadow">
+                    <div class="mdc-elevation-overlay"></div>
+                  </div>
+                  <div class="mdc-switch__ripple"></div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div
+            id="update-gps-data-monitoring-switch-parent"
+            style="
+              display: flex;
+              margin-left: 10px;
+              margin-right: 10px;
+              margin-top: 15px;
+              margin-bottom: 15px;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <label for="update-gps-data-monitoring-switch"
+              >GPS Data Monitoring</label
+            >
+            <button
+              id="update-gps-data-monitoring-switch"
+              class="mdc-switch mdc-switch--unselected"
+              type="button"
+              role="switch"
+              aria-checked="false"
+            >
+              <div class="mdc-switch__track"></div>
+              <div class="mdc-switch__handle-track">
+                <div class="mdc-switch__handle">
+                  <div class="mdc-switch__shadow">
+                    <div class="mdc-elevation-overlay"></div>
+                  </div>
+                  <div class="mdc-switch__ripple"></div>
+                </div>
+              </div>
+            </button>
+          </div>
 
           <button
             style="display: flex; margin-bottom: 10px; margin-top: 10px"
@@ -509,7 +761,11 @@
           <p style="color: white"><b>Download Measurement Data</b></p>
         </div>
         <div class="modal-body">
-          <div id="downloadDataForm" class="mdc-form-field" style="flex-direction: column">
+          <div
+            id="downloadDataForm"
+            class="mdc-form-field"
+            style="flex-direction: column"
+          >
             <!--GENERATED AT RUNTIME-->
           </div>
 
@@ -526,16 +782,16 @@
     </div>
 
     <div id="exceptionModal" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="close" , id="exceptionModalClose">&times;</span>
-            <p style="color: white"><b>Exception occurred</b></p>
-          </div>
-          <div class="modal-body">
-            <p id="exceptionModalOrigin"></p>
-            <p id="exceptionModalInstance"></p>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" , id="exceptionModalClose">&times;</span>
+          <p style="color: white"><b>Exception occurred</b></p>
+        </div>
+        <div class="modal-body">
+          <p id="exceptionModalOrigin"></p>
+          <p id="exceptionModalInstance"></p>
 
-            <button
+          <button
             style="display: flex; margin-bottom: 10px; margin-top: 10px"
             class="mdc-button mdc-button--outlined"
             id="exceptionModalCloseButton"
@@ -543,25 +799,30 @@
             <span class="mdc-button__ripple"></span>
             <span class="mdc-button__label">Close</span>
           </button>
-          </div>
         </div>
       </div>
+    </div>
 
-      <div id="sessionInfoModal" class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <span class="close" , id="sessionInfoModalClose">&times;</span>
-            <p style="color: white"><b>Session information</b></p>
-          </div>
-          <div class="modal-body">
-            <p id="sessionInfoModalHostField">Host: </p>
-            <p id="sessionInfoModalStartedField">Session started at: </p>
-            <p id="sessionInfoModalTotalField">Total measures: </p>
-            <p id="sessionInfoModalNextField">Next measure at: </p>
-          </div>
+    <div id="sessionInfoModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" , id="sessionInfoModalClose">&times;</span>
+          <p style="color: white"><b>Session information</b></p>
+        </div>
+        <div class="modal-body">
+          <p id="sessionInfoModalHostField">Host:</p>
+          <p id="sessionInfoModalStartedField">Session started at:</p>
+          <p id="sessionInfoModalTotalField">Total measures:</p>
+          <p id="sessionInfoModalNextField">Next measure at:</p>
         </div>
       </div>
+    </div>
 
-      <input type="file" id="uploadInput" style="opacity: 0;" accept=".csv,application/csv">
+    <input
+      type="file"
+      id="uploadInput"
+      style="opacity: 0"
+      accept=".csv,application/csv"
+    />
   </body>
 </html>

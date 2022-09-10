@@ -21,7 +21,8 @@ module.exports = {
     let newConnection = new SSHConnection(
       configuration.host,
       configuration.user,
-      configuration.password
+      configuration.password,
+      configuration.queryInterval
     );
     newConnection.connect(socket);
     connections.push(newConnection);
@@ -64,10 +65,11 @@ class SSHConnection {
   stats_measures = 0;
   stats_nextmeasure = new Date().getTime();
 
-  constructor(host, username, password) {
+  constructor(host, username, password, queryInterval) {
     this.host = host;
     this.username = username;
     this.password = password;
+    this.queryInterval = queryInterval;
   }
 
   connect(io) {
@@ -89,6 +91,7 @@ class SSHConnection {
     };
 
     this.status = status_pending;
+    const timerInterval = this.queryInterval;
     console.log("Establishing connection to " + this.host);
 
     this.currentConnection
@@ -111,7 +114,7 @@ class SSHConnection {
 
               this.timerId = setInterval(() => {
                 stream.write(monitoringCommand);
-              }, 60 * 1000);
+              }, timerInterval);
             } else {
               let content = data.toString().split(os.EOL);
 
