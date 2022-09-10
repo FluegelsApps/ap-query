@@ -411,7 +411,7 @@ window.onload = function () {
     updateConfigurationModal.style.display = "block";
     updateConfigurationHostField.value = configuration.host;
     updateConfigurationUsernameField.value = configuration.user;
-    updateConfigurationQueryIntervalField.value = configuration.queryInterval;
+    updateConfigurationQueryIntervalField.value = configuration.queryInterval / 1000;
     updateConfigurationPowerMonitoringSwitch.selected = configuration.powerMonitoring;
     updateConfigurationGPSMonitoringSwitch.selected = configuration.gpsMonitoring;
 
