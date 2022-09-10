@@ -456,6 +456,11 @@ window.onload = function () {
     updateMeasurements(JSON.parse(rawMeasurements));
   });
 
+  //Update the gps data
+  socket.on("notify_gps_updated", (rawGPS) => {
+    updateGPSData(JSON.parse(rawGPS));
+  });
+
   //Download the received database file
   socket.on("response_exportdb_file", (content) => {
     let anchor = document.createElement("a");
@@ -801,6 +806,11 @@ function updateMeasurements(measurements) {
 
   measurementChart.data.labels = labels;
   measurementChart.update();
+}
+
+function updateGPSData(gpsData) {
+  console.log("Received new GPS Data");
+  console.log(gpsData);
 }
 
 function removeConfiguration(host) {

@@ -11,8 +11,8 @@ const ssh2 = require("ssh2");
 const os = require("os");
 
 const measurements = require("./measurements.js");
+const gps = require("./gps.js");
 const config = require("./config.js");
-const { timeStamp } = require("console");
 
 var connections = [];
 
@@ -204,7 +204,7 @@ class SSHConnection {
         let data = adjustedData.split(" ");
         if (data.length == 6) {
           this.stats_measures++;
-          this.stats_nextmeasure = new Date(new Date().getTime() + 60000).getTime();
+          this.stats_nextmeasure = new Date(new Date().getTime() + this.queryInterval).getTime();
 
           //Adding the actual content
           measurements.insertMeasurement(
@@ -225,8 +225,40 @@ class SSHConnection {
     }
   }
 
-  onGPSMonitoringResponse(io, content, startIndex) {
-    console.log("GPS Monitoring Response Received");
+  onGPSMonitoringResponse = (io, content, startIndex) => {
+    try {
+      this.stats_measures++;
+      this.stats_nextmeasure = new Date(new Date().getTime() + this.queryInterval).getTime();
+      // Demo response: $GNGGA,152856.00,5151.66977,N,01042.80602,E,2,12,0.51,252.2,M,45.8,M,,0000*47
+      const data = content[startIndex].split(",");
+      const idAndChecksum = data[14].split("*");
+      console.log("Received content: " + data.length);
+
+      gps.insertGPS(
+        parseFloat(nullable(data[1])),
+        parseFloat(nullable(data[2])),
+        nullable(data[3]),
+        parseFloat(nullable(data[4])),
+        nullable(data[5]),
+        parseInt(nullable(data[6])),
+        parseInt(nullable(data[7])),
+        parseFloat(nullable(data[8])),
+        parseFloat(nullable(data[9])),
+        nullable(data[10]),
+        parseFloat(nullable(data[11])),
+        nullable(data[12]),
+        nullable(data[13]),
+        parseInt(nullable(idAndChecksum[0])),
+        parseInt(nullable(idAndChecksum[1]))
+      );
+      console.log("Saving data");
+      io.emit(
+        "notify_gps_updated",
+        gps.getGPSData()
+      );
+    } catch (exception) {
+      console.log("Exception caught: " + exception);
+    }
   }
 
   getStatistics() {
@@ -238,4 +270,8 @@ class SSHConnection {
       nextmeasure: this.stats_nextmeasure
     };
   }
+}
+
+function nullable(value) {
+  return value.length > 0 ? value : "null";
 }

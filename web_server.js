@@ -7,6 +7,7 @@ const certmanager = require("./backend/certmanager.js");
 
 const config = require("./backend/config.js");
 const measurements = require("./backend/measurements.js");
+const gps = require("./backend/gps.js");
 
 const command_insert_configuration = "insert_configuration";
 const command_remove_configuration = "remove_configuration";
@@ -19,6 +20,7 @@ const command_replace_measurements = "replace_measurements";
 
 const notify_configuration_update = "notify_configdb_updated";
 const notify_measurements_update = "notify_measurements_updated";
+const notify_gps_update = "notify_gps_updated";
 
 const request_configuration_data = "request_configdb_data";
 const request_export_data = "request_exportdb_file";
@@ -70,6 +72,7 @@ module.exports = {
       //The user connected successfully
       socket.emit(notify_configuration_update, config.getConfiguration());
       socket.emit(notify_measurements_update, measurements.getMeasurements());
+      socket.emit(notify_gps_update, gps.getGPSData());
 
       socket.on(command_insert_configuration, function (rawConfiguration) {
         let configuration = JSON.parse(rawConfiguration);

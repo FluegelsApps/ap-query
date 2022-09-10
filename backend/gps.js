@@ -40,6 +40,20 @@ module.exports = {
             new Buffer(gpsDatabase.export())
         )
     },
+    getGPSData: function () {
+        const fetchStatement = gpsDatabase.prepare(
+            'SELECT * FROM gps'
+        )
+        fetchStatement.getAsObject()
+        fetchStatement.bind()
+
+        let gpsData = '[\n'
+        while (fetchStatement.step())
+            gpsData =
+                gpsData + JSON.stringify(fetchStatement.getAsObject()) + ','
+        gpsData = gpsData.substring(0, gpsData.length - 1) + '\n]'
+        return gpsData
+    },
     insertGPS: function (
         timestamp,
         latitude,
@@ -57,6 +71,8 @@ module.exports = {
         diffRefStationID,
         checksum
     ) {
+        console.log(`INSERT INTO gps VALUES(${timestamp}, ${latitude}, '${latitudeOrientation}', ${longitude}, '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`);
+
         gpsDatabase.run(
             `INSERT INTO gps VALUES(${timestamp}, ${latitude}, '${latitudeOrientation}', ${longitude}, '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`
         )
