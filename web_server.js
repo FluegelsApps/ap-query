@@ -39,18 +39,18 @@ module.exports = {
     //Web Page
     app.get("/", (req, res) => {
       res.contentType = "text/html";
-      res.sendFile(__dirname + "/frontend/index.html");
+      res.sendFile(__dirname + "/frontend-old/index.html");
     });
     app.get("/dashboard", (req, res) => {
       res.redirect("/");
     });
     app.get("/frontend.js", (req, res) => {
       res.contentType = "text/javascript";
-      res.sendFile(__dirname + "/frontend/frontend.js");
+      res.sendFile(__dirname + "/frontend-old/frontend.js");
     });
     app.get("/main.css", (req, res) => {
       res.contentType = "text/css";
-      res.sendFile(__dirname + "/frontend/main.css");
+      res.sendFile(__dirname + "/frontend-old/main.css");
     });
 
     //API Access
@@ -63,7 +63,7 @@ module.exports = {
 
     app.get("*", (req, res) => {
       res.contentType = "text/html";
-      res.sendFile(__dirname + "/frontend/notfound.html");
+      res.sendFile(__dirname + "/frontend-old/notfound.html");
     });
 
     io.on("connection", (socket) => {
@@ -123,7 +123,7 @@ module.exports = {
         );
       });
 
-      socket.on(request_session_information, function(host) {
+      socket.on(request_session_information, function (host) {
         socket.emit(response_session_information, JSON.stringify(ssh.getConnectionStats(host)));
       });
     });

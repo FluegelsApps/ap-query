@@ -33,8 +33,8 @@ module.exports = {
       connections.splice(this.findConnectionIndex(configuration.host), 1);
     }
   },
-  getConnectionStats: function(host) {
-    if(this.hasConnection(host))
+  getConnectionStats: function (host) {
+    if (this.hasConnection(host))
       return connections[this.findConnectionIndex(host)].getStatistics();
   },
   hasConnection: function (host) {
@@ -59,10 +59,10 @@ class SSHConnection {
   status = status_offline;
   timerId = 0;
   connected = false;
-  
+
   stats_started = new Date().getTime();
   stats_measures = 0;
-  stats_nextmeasure = new Date().getTime();;
+  stats_nextmeasure = new Date().getTime();
 
   constructor(host, username, password) {
     this.host = host;
