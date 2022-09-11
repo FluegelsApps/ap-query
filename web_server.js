@@ -7,6 +7,7 @@ const certmanager = require("./backend/certmanager.js");
 
 const config = require("./backend/config.js");
 const measurements = require("./backend/measurements.js");
+const gps = require("./backend/gps.js");
 
 const command_insert_configuration = "insert_configuration";
 const command_remove_configuration = "remove_configuration";
@@ -16,17 +17,23 @@ const command_start_connection = "start_connection";
 const command_stop_connection = "stop_connection";
 const command_delete_measurements = "delete_measurements";
 const command_replace_measurements = "replace_measurements";
+const command_delete_gps_data = "delete_gps_data";
 
 const notify_configuration_update = "notify_configdb_updated";
 const notify_measurements_update = "notify_measurements_updated";
+const notify_gps_update = "notify_gps_updated";
 
 const request_configuration_data = "request_configdb_data";
 const request_export_data = "request_exportdb_file";
 const request_session_information = "request_session_info";
+const request_export_gps_csv = "request_gps_monitoring_exportdb_csv";
+const request_export_gps_raw = "request_gps_monitoring_exportdb_raw";
 
 const response_configuration_data = "response_configdb_data";
 const response_export_data = "response_exportdb_file";
 const response_session_information = "response_session_info";
+const response_export_gps_csv = "response_gps_monitoring_exportdb_csv";
+const response_export_gps_raw = "response_gps_monitoring_exportdb_raw";
 
 module.exports = {
   launch: function () {
@@ -70,13 +77,19 @@ module.exports = {
       //The user connected successfully
       socket.emit(notify_configuration_update, config.getConfiguration());
       socket.emit(notify_measurements_update, measurements.getMeasurements());
+      socket.emit(notify_gps_update, gps.getGPSData());
 
       socket.on(command_insert_configuration, function (rawConfiguration) {
         let configuration = JSON.parse(rawConfiguration);
+        console.log(configuration);
+
         config.insertConfiguration(
           configuration.host,
           configuration.username,
-          configuration.password
+          configuration.password,
+          configuration.queryInterval,
+          configuration.powerMonitoring,
+          configuration.gpsMonitoring
         );
         io.emit(notify_configuration_update, config.getConfiguration());
       });
@@ -109,6 +122,11 @@ module.exports = {
         socket.emit(notify_measurements_update, measurements.getMeasurements());
       });
 
+      socket.on(command_delete_gps_data, function (args) {
+        gps.deleteGPS();
+        socket.emit(notify_gps_update, gps.getGPSData());
+      });
+
       socket.on(request_configuration_data, function (host) {
         socket.emit(
           response_configuration_data,
@@ -125,6 +143,20 @@ module.exports = {
 
       socket.on(request_session_information, function (host) {
         socket.emit(response_session_information, JSON.stringify(ssh.getConnectionStats(host)));
+      });
+
+      socket.on(request_export_gps_csv, function (accessPoints) {
+        socket.emit(
+          response_export_gps_csv,
+          gps.downloadGPS(JSON.parse(accessPoints))
+        );
+      });
+
+      socket.on(request_export_gps_raw, function (accessPoints) {
+        socket.emit(
+          response_export_gps_raw,
+          gps.downloadGPSRaw(JSON.parse(accessPoints))
+        );
       });
     });
 

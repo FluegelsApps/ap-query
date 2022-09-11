@@ -1,14 +1,18 @@
-const resultHeader = "AP Power Monitoring information";
-const resultTableHeader = "Name";
-const monitoringCommandShort = `show aps power-monitor`;
-const monitoringCommand = `show aps power-monitor\n`;
+const powerMonitoringCommand = `show aps power-monitor\n`;
+const powerMonitoringCommandShort = `show aps power-monitor`;
+const powerMonitoringResultTableHeader = "Name";
+const powerMonitoringResultHeader = "AP Power Monitoring information";
+
+const gpsMonitoringCommand = `show ap gps advanced\n`;
+const gpsMonitoringCommandShort = `show ap gps advanced`;
+const gpsMonitoringResultHeader = `$GNGGA`;
 
 const ssh2 = require("ssh2");
 const os = require("os");
 
 const measurements = require("./measurements.js");
+const gps = require("./gps.js");
 const config = require("./config.js");
-const { timeStamp } = require("console");
 
 var connections = [];
 
@@ -21,7 +25,10 @@ module.exports = {
     let newConnection = new SSHConnection(
       configuration.host,
       configuration.user,
-      configuration.password
+      configuration.password,
+      configuration.queryInterval,
+      configuration.powerMonitoring,
+      configuration.gpsMonitoring
     );
     newConnection.connect(socket);
     connections.push(newConnection);
@@ -64,13 +71,16 @@ class SSHConnection {
   stats_measures = 0;
   stats_nextmeasure = new Date().getTime();
 
-  constructor(host, username, password) {
+  constructor(host, username, password, queryInterval, powerMonitoring, gpsMonitoring) {
     this.host = host;
     this.username = username;
     this.password = password;
+    this.queryInterval = queryInterval;
+    this.powerMonitoring = powerMonitoring;
+    this.gpsMonitoring = gpsMonitoring;
   }
 
-  connect(io) {
+  connect = (io) => {
     config.updateConfigurationStatus({
       oldhost: this.host,
       status: "Connecting",
@@ -89,6 +99,14 @@ class SSHConnection {
     };
 
     this.status = status_pending;
+
+    // Copy variables for internal use
+    const timerInterval = this.queryInterval;
+    const powerMonitoringCallback = this.onPowerMonitoringResponse;
+    const gpsMonitoringCallback = this.onGPSMonitoringResponse;
+    const usePowerMonitoring = this.powerMonitoring;
+    const useGPSMonitoring = this.gpsMonitoring;
+
     console.log("Establishing connection to " + this.host);
 
     this.currentConnection
@@ -110,55 +128,22 @@ class SSHConnection {
               io.emit("notify_configdb_updated", config.getConfiguration());
 
               this.timerId = setInterval(() => {
-                stream.write(monitoringCommand);
-              }, 60 * 1000);
+                if (usePowerMonitoring) stream.write(powerMonitoringCommand);
+                if (useGPSMonitoring) stream.write(gpsMonitoringCommand);
+              }, timerInterval);
             } else {
               let content = data.toString().split(os.EOL);
 
-              let startIndex = 0;
-              for (var i = 0; i < content.length; i++)
-                if (content[i].includes(resultHeader)) startIndex = i;
-
-              for (var i = startIndex; i < content.length; i++)
-                if (content[i].includes(resultTableHeader)) startIndex = i + 2;
-
-              for (var i = startIndex; i < content.length - 1; i++) {
-                if (!content[i].includes(monitoringCommandShort)) {
-                  //Remove double whitespaces from the string
-                  let adjustedData = "";
-                  let recentWhitespace = false;
-                  for (let a = 0; a < content[i].length; a++) {
-                    if (content[i][a] === " ") {
-                      if (!recentWhitespace) {
-                        recentWhitespace = true;
-                        adjustedData = adjustedData + content[i][a];
-                      }
-                    } else {
-                      recentWhitespace = false;
-                      adjustedData = adjustedData + content[i][a];
-                    }
-                  }
-
-                  let data = adjustedData.split(" ");
-                  if (data.length == 6) {
-                    this.stats_measures++;
-                    this.stats_nextmeasure = new Date(new Date().getTime() + 60000).getTime();
-
-                    //Adding the actual content
-                    measurements.insertMeasurement(
-                      new Date().getTime(),
-                      data[0],
-                      data[1],
-                      data[2],
-                      parseInt(data[3]),
-                      parseInt(data[4]),
-                      parseInt(data[5])
-                    );
-                    io.emit(
-                      "notify_measurements_updated",
-                      measurements.getMeasurements()
-                    );
-                  }
+              for (var i = 0; i < content.length; i++) {
+                if (content[i].includes(powerMonitoringResultHeader)) {
+                  powerMonitoringCallback(io, content, i);
+                  break;
+                } else if (content[i].includes(powerMonitoringResultTableHeader)) {
+                  powerMonitoringCallback(io, content, i + 2);
+                  break;
+                } else if (content[i].includes(gpsMonitoringResultHeader)) {
+                  gpsMonitoringCallback(io, content, i);
+                  break;
                 }
               }
             }
@@ -197,6 +182,88 @@ class SSHConnection {
     io.emit("notify_configdb_updated", config.getConfiguration());
   }
 
+  onPowerMonitoringResponse(io, content, startIndex) {
+    console.log("Power Monitoring Response Received");
+    for (var i = startIndex; i < content.length - 1; i++) {
+      if (!content[i].includes(powerMonitoringCommandShort)) {
+        //Remove double whitespaces from the string
+        let adjustedData = "";
+        let recentWhitespace = false;
+        for (let a = 0; a < content[i].length; a++) {
+          if (content[i][a] === " ") {
+            if (!recentWhitespace) {
+              recentWhitespace = true;
+              adjustedData = adjustedData + content[i][a];
+            }
+          } else {
+            recentWhitespace = false;
+            adjustedData = adjustedData + content[i][a];
+          }
+        }
+
+        let data = adjustedData.split(" ");
+        if (data.length == 6) {
+          this.stats_measures++;
+          this.stats_nextmeasure = new Date(new Date().getTime() + this.queryInterval).getTime();
+
+          //Adding the actual content
+          measurements.insertMeasurement(
+            new Date().getTime(),
+            data[0],
+            data[1],
+            data[2],
+            parseInt(data[3]),
+            parseInt(data[4]),
+            parseInt(data[5])
+          );
+          io.emit(
+            "notify_measurements_updated",
+            measurements.getMeasurements()
+          );
+        }
+      }
+    }
+  }
+
+  onGPSMonitoringResponse = (io, content, startIndex) => {
+    try {
+      this.stats_measures++;
+      this.stats_nextmeasure = new Date(new Date().getTime() + this.queryInterval).getTime();
+      // Demo response: $GNGGA,152856.00,5151.66977,N,01042.80602,E,2,12,0.51,252.2,M,45.8,M,,0000*47
+      const data = content[startIndex].split(",");
+      const idAndChecksum = data[14].split("*");
+      console.log("Received content: " + data.length);
+
+      gps.insertGPS(
+        new Date().getTime(),
+        nullableFloat(data[1]),
+        this.host,
+        nullable(data[2]),
+        nullable(data[3]),
+        nullable(data[4]),
+        nullable(data[5]),
+        nullableInt(data[6]),
+        nullableInt(data[7]),
+        nullableFloat(data[8]),
+        nullableFloat(data[9]),
+        nullable(data[10]),
+        nullableFloat(data[11]),
+        nullable(data[12]),
+        nullable(data[13]),
+        nullableInt(idAndChecksum[0]),
+        nullableInt(idAndChecksum[1]),
+        content[startIndex]
+      );
+      console.log("Saving data");
+      io.emit(
+        "notify_gps_updated",
+        gps.getGPSData()
+      );
+    } catch (exception) {
+      console.log("Exception caught: " + exception);
+    }
+  }
+
   getStatistics() {
     return {
       host: this.host,
@@ -206,4 +273,16 @@ class SSHConnection {
       nextmeasure: this.stats_nextmeasure
     };
   }
+}
+
+function nullable(value) {
+  return value.length > 0 ? value : "null";
+}
+
+function nullableInt(value) {
+  return value.length > 0 ? parseInt(value) : "null";
+}
+
+function nullableFloat(value) {
+  return value.length > 0 ? parseFloat(value) : "null";
 }

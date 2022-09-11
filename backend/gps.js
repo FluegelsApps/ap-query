@@ -8,7 +8,9 @@ module.exports = {
     initialize: function () {
         /**
          * Data structure:
-         * Timestamp
+         * Timestamp (UTC)
+         * Timestamp (Local)
+         * Access Point DNS or Address
          * Latitude
          * North or South
          * Longitude
@@ -23,6 +25,7 @@ module.exports = {
          * Age of differential GPS data
          * Differential reference station ID
          * Checksum
+         * Original string that was received
          */
 
         db().then(function (SQL) {
@@ -30,7 +33,7 @@ module.exports = {
                 ? new SQL.Database(fs.readFileSync(gpsDatabasePath))
                 : new SQL.Database()
             gpsDatabase.run(
-                'CREATE TABLE IF NOT EXISTS gps (timestamp float, latitude float, latitudeOrientation string, longitude float, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int);'
+                'CREATE TABLE IF NOT EXISTS gps (timestamp long, timestampUTC float, accessPoint string, latitude string, latitudeOrientation string, longitude string, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int, original string);'
             )
         })
     },
@@ -40,8 +43,24 @@ module.exports = {
             new Buffer(gpsDatabase.export())
         )
     },
+    getGPSData: function () {
+        const fetchStatement = gpsDatabase.prepare(
+            'SELECT * FROM gps'
+        )
+        fetchStatement.getAsObject()
+        fetchStatement.bind()
+
+        let gpsData = '[\n'
+        while (fetchStatement.step())
+            gpsData =
+                gpsData + JSON.stringify(fetchStatement.getAsObject()) + ','
+        gpsData = gpsData.substring(0, gpsData.length - 1) + '\n]'
+        return gpsData
+    },
     insertGPS: function (
         timestamp,
+        timestampUTC,
+        accessPoint,
         latitude,
         latitudeOrientation,
         longitude,
@@ -55,15 +74,58 @@ module.exports = {
         geoidalSeparationUnits,
         diffDataAge,
         diffRefStationID,
-        checksum
+        checksum,
+        original
     ) {
+        console.log(accessPoint);
         gpsDatabase.run(
-            `INSERT INTO gps VALUES(${timestamp}, ${latitude}, '${latitudeOrientation}', ${longitude}, '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`
+            `INSERT INTO gps VALUES(${timestamp}, ${timestampUTC}, '${accessPoint}', '${latitude}', '${latitudeOrientation}', '${longitude}', '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum}, '${original}');`
         )
         this.saveInternal()
     },
     deleteGPS: function () {
         gpsDatabase.run('DELETE FROM gps')
         this.saveInternal()
-    }
+    },
+    downloadGPS: function (accessPoints) {
+        let condition = ''
+        for (let i = 0; i < accessPoints.length; i++)
+            condition = condition + `accessPoint = '${accessPoints[i]}' OR `
+        condition = condition.substring(0, condition.length - 4)
+
+        const downloadStatement = gpsDatabase.prepare(
+            `SELECT * FROM gps WHERE ${condition}`
+        )
+        downloadStatement.getAsObject()
+        downloadStatement.bind()
+
+        let gpsData = '';
+        while (downloadStatement.step()) {
+            let instance = downloadStatement.getAsObject()
+            gpsData = `${gpsData}${instance.timestampUTC}, '${instance.accessPoint}', '${instance.latitude}', '${instance.latitudeOrientation}', '${instance.longitude}', '${instance.longitudeOrientation}', ${instance.quality}, ${instance.satellites}, ${instance.horizontalDilution}, ${instance.altitude}, '${instance.altitudeUnits}', ${instance.geoidalSeparation}, '${instance.geoidalSeparationUnits}', '${instance.diffDataAge}', ${instance.diffRefStationID}, ${instance.checksum}\n`
+        }
+
+        return (
+            '"Timestamp", "Access Point (Host)", "Latitude", "Latitude Orientation", "Longitude", "Longitude Orientation", "Quality Index", "Number of Satellites", "Horizontal Dilution", "Antenna Altitude", "Antenna Altitude Units", "Geoidal Separation", "Geoidal Separation Units", "Differential Data Age", "Differential Reference Station ID", "Checksum"\n' +
+            gpsData
+        )
+    },
+    downloadGPSRaw: function (accessPoints) {
+        let condition = ''
+        for (let i = 0; i < accessPoints.length; i++)
+            condition = condition + `accessPoint = '${accessPoints[i]}' OR `
+        condition = condition.substring(0, condition.length - 4)
+
+        const downloadStatement = gpsDatabase.prepare(
+            `SELECT * FROM gps WHERE ${condition}`
+        )
+        downloadStatement.getAsObject()
+        downloadStatement.bind()
+
+        let gpsData = ''
+        while (downloadStatement.step())
+            gpsData = `${gpsData}${downloadStatement.getAsObject().original}\n`
+
+        return gpsData
+    },
 }
