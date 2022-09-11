@@ -86,6 +86,10 @@ let gpsMonitoringDownloadRawModalClose;
 let gpsMonitoringDownloadRawModalButton;
 let gpsMonitoringDownloadRawModalSelector;
 
+let gpsMonitoringMapInfoModal;
+let gpsMonitoringMapInfoModalClose;
+let gpsMonitoringMapInfoModalContent;
+
 //Variables
 var socket;
 var measurementChart;
@@ -163,6 +167,22 @@ const downloadDataItem = `<div class="mdc-checkbox">
 </div>
 <label for="checkbox-1">$NAME$</label>`;
 
+const gpsMonitoringMapInfoModalContentTemplate = `<p>
+System timestamp: $TIMESTAMP$<br/>
+Timestamp (UTC): $TIMESTAMPUTC$<br/>
+Access Point (Host): $AP$<br/>
+Latitude: $LATITUDE$<br/>
+Longitude: $LONGITUDE$<br/>
+Signal Quality: $QUALITY$<br/>
+Number of Satellites: $SATELLITES$<br/>
+Horizontal Dilution: $DILUTION$<br/>
+Antenna Altitude: $ALTITUDE$<br/>
+Geoidal Separation: $SEPARATION$<br/>
+Differential Data Age: $DIFFDATAAGE$<br/>
+Differential Reference Station ID: $DIFFREFSTATIONID$<br/>
+Checksum: $CHECKSUM$
+</p>`;
+
 window.onload = function () {
   //Initialize Socket IO
   socket = io();
@@ -174,10 +194,29 @@ window.onload = function () {
   mapboxgl.accessToken = "pk.eyJ1IjoibTR4ZGV2IiwiYSI6ImNsN3c4cDN0dTBqNHIzb3MyMWwwenZsenQifQ.bpPCMxfKQiOPtJ2waiiPVg";
   gpsMap = new mapboxgl.Map({
     container: 'gps-map',
-    style: 'mapbox://styles/mapbox/streets-v11'
+    style: 'mapbox://styles/mapbox/satellite-streets-v11',
+    projection: "globe",
+    zoom: 2,
   });
 
   gpsMap.on("load", function () {
+    //Custom atmospheric styling
+    gpsMap.setFog({
+      'color': 'rgb(220, 159, 159)', // Pink fog / lower atmosphere
+      'high-color': 'rgb(36, 92, 223)', // Blue sky / upper atmosphere
+      'horizon-blend': 0.4 // Exaggerate atmosphere (default is .1)
+    });
+
+    gpsMap.addSource('mapbox-dem', {
+      'type': 'raster-dem',
+      'url': 'mapbox://mapbox.terrain-rgb'
+    });
+
+    gpsMap.setTerrain({
+      'source': 'mapbox-dem',
+      'exaggeration': 1.5
+    });
+
     gpsMapLoaded = true;
     if (lastGPSData != null) updateGPSData(lastGPSData);
 
@@ -221,15 +260,70 @@ window.onload = function () {
     });
 
     gpsMap.addLayer({
+      id: "unclustered-support",
+      type: 'circle',
+      source: "clusterPositions",
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': '#11b4da',
+        'circle-radius': 4,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff',
+      },
+    });
+
+    gpsMap.addLayer({
       id: 'unclustered-point',
       type: 'fill',
       source: 'positions',
       paint: {
         "fill-color": "blue",
-        "fill-opacity": 0.6,
+        "fill-opacity": 0.2,
       }
     });
   });
+
+  gpsMap.on("click", "clusters", (e) => {
+    const features = gpsMap.queryRenderedFeatures(e.point, {
+      layers: ["clusters"]
+    });
+    const clusterId = features[0].properties.cluster_id;
+    gpsMap.getSource("clusterPositions").getClusterExpansionZoom(
+      clusterId,
+      (err, zoom) => {
+        if (err) return;
+
+        gpsMap.easeTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom
+        });
+      }
+    );
+  });
+
+  gpsMap.on("click", "unclustered-point", e => {
+    const properties = e.features[0].properties;
+    const quality = properties.quality == 0 ? "Fix not available" : properties.quality == 1 ? "GPS Fix" : properties.quality == 2 ? "Differential GPS Fix" : "-";
+
+    gpsMonitoringMapInfoModal.style.display = "block";
+    gpsMonitoringMapInfoModalContent.innerHTML = gpsMonitoringMapInfoModalContentTemplate
+      .replace("$TIMESTAMP$", properties.timestamp ?? "-")
+      .replace("$TIMESTAMPUTC$", properties.timestampUTC ?? "-")
+      .replace("$AP$", properties.accessPoint ?? "-")
+      .replace("$LATITUDE$", `${properties.latitude ?? "-"} ${properties.latitudeOrientation}`)
+      .replace("$LONGITUDE$", `${properties.longitude ?? "-"} ${properties.longitudeOrientation}`)
+      .replace("$QUALITY$", quality ?? "-")
+      .replace("$SATELLITES$", properties.satellites ?? "-")
+      .replace("$DILUTION$", properties.horizontalDilution ?? "-")
+      .replace("$ALTITUDE$", `${properties.altitude ?? "-"} ${properties.altitudeUnits}`)
+      .replace("$SEPARATION$", `${properties.geoidalSeparation ?? "-"} ${properties.geoidalSeparationUnits}`)
+      .replace("$DIFFDATAAGE$", properties.diffDataAge ?? "-")
+      .replace("$DIFFREFSTATIONID$", properties.diffRefStationID ?? "-")
+      .replace("$CHECKSUM$", properties.checksum ?? "-");
+  });
+
+  gpsMap.on("mouseenter", "clusters", () => gpsMap.getCanvas().style.cursor = "pointer");
+  gpsMap.on("mouseleave", "clusters", () => gpsMap.getCanvas().style.cursor = "");
 
   //Initialize the expandable power monitoring card
   for (var i = 1; i < powerMonitoringCard.children.length; i++) {
@@ -421,6 +515,11 @@ window.onload = function () {
     }
 
     socket.emit("request_gps_monitoring_exportdb_raw", JSON.stringify(accessPoints));
+  };
+
+  //Close the map info modal
+  gpsMonitoringMapInfoModalClose.onclick = function () {
+    gpsMonitoringMapInfoModal.style.display = "none";
   };
 
   //Close the exception dialog
@@ -626,6 +725,7 @@ window.onload = function () {
     if (event.target == downloadModal) downloadModal.style.display = "none";
     if (event.target == gpsMonitoringDownloadModal) gpsMonitoringDownloadModal.style.display = "none";
     if (event.target == gpsMonitoringDownloadRawModal) gpsMonitoringDownloadRawModal.style.display = "none";
+    if (event.target == gpsMonitoringMapInfoModal) gpsMonitoringMapInfoModal.style.display = "none";
     if (event.target == addConfigurationModal)
       addConfigurationModal.style.display = "none";
     if (event.target == updateConfigurationModal)
@@ -859,6 +959,10 @@ function initialize() {
   gpsMonitoringDownloadRawModalButton = document.getElementById("gpsMonitoringDownloadRawModalButton");
   gpsMonitoringDownloadRawModalSelector = document.getElementById("gpsMonitoringDownloadRawModalSelector");
 
+  gpsMonitoringMapInfoModal = document.getElementById("gpsMonitoringMapInfoModal");
+  gpsMonitoringMapInfoModalClose = document.getElementById("gpsMonitoringMapInfoModalClose");
+  gpsMonitoringMapInfoModalContent = document.getElementById("gpsMonitoringMapInfoModalContent");
+
   addConfigurationHostField = new mdc.textField.MDCTextField(
     document.querySelector("#addConfigurationHostField")
   );
@@ -992,7 +1096,7 @@ function updateMeasurements(measurements) {
     if (
       measurements[i].ap == selectedAP &&
       !timestamps.includes(measurements[i].timestamp) &&
-      inTimeRange(measurements[i].timestamp)
+      inTimeRange(measurements[i].timestamp, selectedTimeSpan)
     )
       timestamps.push(measurements[i].timestamp);
   }
@@ -1010,7 +1114,7 @@ function updateMeasurements(measurements) {
       measurements[i] != null &&
       measurements[i].ap != null &&
       selectedAP == measurements[i].ap &&
-      inTimeRange(measurements[i].timestamp)
+      inTimeRange(measurements[i].timestamp, selectedTimeSpan)
     ) {
       if (displayType == "chart") {
         let time = new Date(measurements[i].timestamp);
@@ -1134,15 +1238,16 @@ function updateGPSData(gpsData) {
 
   if (gpsMonitoringDisplayType == "map") {
     for (let i = 0; i < gpsData.length; i++) {
-      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp)) {
+      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp, gpsMonitoringTimeFilter)) {
         let correctedLatitude = minutesToDegrees(gpsData[i].latitude);
         let correctedLongitude = minutesToDegrees(gpsData[i].longitude);
 
         positions.push(createGeoJSONCircle(
           correctedLatitude,
           correctedLongitude,
-          1.0
-        ))
+          (3 * gpsData[i].horizontalDilution) / 1000,
+          gpsData[i],
+        ));
 
         clusterPositions.push({
           type: "Feature",
@@ -1187,7 +1292,7 @@ function updateGPSData(gpsData) {
     }
   } else if (gpsMonitoringDisplayType == "table") {
     for (let i = 0; i < gpsData.length; i++) {
-      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp)) {
+      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp, gpsMonitoringTimeFilter)) {
         let row = gpsMonitoringTable.insertRow();
         row.insertCell().innerHTML = formatUTCTime(gpsData[i].timestampUTC);
         row.insertCell().innerHTML = gpsData[i].accessPoint ?? "-";
@@ -1201,6 +1306,24 @@ function updateGPSData(gpsData) {
         row.insertCell().innerHTML = gpsData[i].diffDataAge ?? "-";
         row.insertCell().innerHTML = gpsData[i].diffRefStationID ?? "-";
         row.insertCell().innerHTML = gpsData[i].checksum ?? "-";
+
+        row.style.cursor = "pointer";
+        row.onclick = function () {
+          //Show the entry on the map
+          gpsMonitoringDisplaySwitch.selected = false;
+          gpsMonitoringDisplayType = "map";
+          updateGPSData(gpsData);
+          document.getElementById("gps-map").scrollIntoView();
+
+          gpsMap.flyTo({
+            center: [
+              minutesToDegrees(gpsData[i].longitude),
+              minutesToDegrees(gpsData[i].latitude),
+            ],
+            zoom: 10 + (25 * gpsData[i].horizontalDilution),
+            duration: 5000,
+          });
+        };
       }
     }
   }
@@ -1242,9 +1365,9 @@ function formatTime(time) {
   return time < 10 ? "0" + time : time;
 }
 
-function inTimeRange(time) {
+function inTimeRange(time, timespan) {
   return (
-    new Date().getTime() - time <= selectedTimeSpan || selectedTimeSpan == -1
+    new Date().getTime() - time <= timespan || timespan == -1
   );
 }
 
@@ -1270,7 +1393,7 @@ function formatUTCTime(timestamp) {
 }
 
 //Source: https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js
-function createGeoJSONCircle(latitude, longitude, radius) {
+function createGeoJSONCircle(latitude, longitude, radius, properties) {
   var ret = [];
   var distanceX = radius / (111.320 * Math.cos(latitude * Math.PI / 180));
   var distanceY = radius / 110.574;
@@ -1291,21 +1414,8 @@ function createGeoJSONCircle(latitude, longitude, radius) {
       "type": "Polygon",
       "coordinates": [ret],
     },
+    "properties": properties,
   };
-
-  /*return {
-    "type": "geojson",
-    "data": {
-      "type": "FeatureCollection",
-      "features": [{
-        "type": "Feature",
-        "geometry": {
-          "type": "Polygon",
-          "coordinates": [ret],
-        },
-      }],
-    },
-  };*/
 }
 
 function minutesToDegrees(value) {

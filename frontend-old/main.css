@@ -7,6 +7,7 @@ html * {
   font-size: 1em !important;
   color: #000 !important;
   font-family: Arial !important;
+  scroll-behavior: smooth;
 }
 
 .text-field {
@@ -74,6 +75,13 @@ html * {
 
 .modal-body {
   padding: 2px 16px;
+}
+
+table,
+th,
+td {
+  border: 1px solid gray;
+  border-collapse: collapse;
 }
 
 td {

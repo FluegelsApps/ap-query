@@ -69,7 +69,7 @@
         <h3>Power Monitoring</h3>
         <button
           id="power-monitoring-card-toggle"
-          onclick=""
+          style="display: none"
           class="mdc-icon-button material-icons"
         >
           <div class="mdc-icon-button__ripple"></div>
@@ -359,7 +359,7 @@
         <h3>GPS Monitoring</h3>
         <button
           id="gps-monitoring-card-toggle"
-          onclick=""
+          style="display: none"
           class="mdc-icon-button material-icons"
         >
           <div class="mdc-icon-button__ripple"></div>
@@ -624,25 +624,7 @@
           overflow: scroll;
         "
       >
-        <!--timestamp,
-      timestampUTC,
-      accessPoint,
-      latitude,
-      latitudeOrientation,
-      longitude,
-      longitudeOrientation,
-      quality,
-      satellites,
-      horizontalDilution,
-      altitude,
-      altitudeUnits,
-      geoidalSeparation,
-      geoidalSeparationUnits,
-      diffDataAge,
-      diffRefStationID,
-      checksum,
-      original-->
-
+        <h3 style="display: flex; justify-content: center;">Click any entry to display it on the map</h3>
         <table id="gpsMonitoringTable" width="100%">
           <tr>
             <th><span class="material-icons">schedule</span></th>
@@ -661,7 +643,7 @@
         </table>
       </div>
 
-      <div style="width: 100%; height: 800px; margin-top: 10px" id="gps-map" />
+      <div style="width: 100%; height: 600px; margin-top: 10px" id="gps-map" />
     </div>
     <!--#endregion GPS MONITORING-->
 
@@ -1221,6 +1203,21 @@
             <span class="mdc-button__ripple"></span>
             <span class="mdc-button__label">Download</span>
           </button>
+        </div>
+      </div>
+    </div>
+    <!--#endregion-->
+    <!--#region GPS MONITORING INFO MODAL-->
+    <div id="gpsMonitoringMapInfoModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" id="gpsMonitoringMapInfoModalClose">
+            &times;
+          </span>
+          <p style="color: white"><b>GPS Data Information</b></p>
+        </div>
+        <div id="gpsMonitoringMapInfoModalContent" class="modal-body">
+          <!--GENERATED AT RUNTIME-->
         </div>
       </div>
     </div>
