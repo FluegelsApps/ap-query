@@ -65,6 +65,7 @@ let gpsMap;
 let gpsMonitoringCard;
 let gpsMonitoringCardToggle;
 let gpsMonitoringAPSelector;
+let gpsMonitoringDeleteButton;
 let gpsMonitoringTimeSelector;
 
 let gpsMonitoringDownloadButton;
@@ -569,6 +570,15 @@ window.onload = function () {
     updateMeasurements(lastMeasurements);
   });
 
+  //Delete the contents of the gps monitoring database
+  gpsMonitoringDeleteButton.onclick = function () {
+    //Prompt the user to confirm the action
+    if (confirm("Are you sure?")) {
+      //Send the command to the web server
+      socket.emit("delete_gps_data", "");
+    }
+  };
+
   //Close all modals when the window is clicked
   window.onclick = (event) => {
     if (event.target == downloadModal) downloadModal.style.display = "none";
@@ -782,6 +792,7 @@ function initialize() {
 
   gpsMonitoringCard = document.getElementById("gps-monitoring-card");
   gpsMonitoringCardToggle = document.getElementById("gps-monitoring-card-toggle");
+  gpsMonitoringDeleteButton = document.getElementById("gpsMonitoringDeleteButton");
 
   gpsMonitoringAPSelector = new mdc.select.MDCSelect(
     document.getElementById("gpsMonitoringChartSelector")

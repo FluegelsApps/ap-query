@@ -17,6 +17,7 @@ const command_start_connection = "start_connection";
 const command_stop_connection = "stop_connection";
 const command_delete_measurements = "delete_measurements";
 const command_replace_measurements = "replace_measurements";
+const command_delete_gps_data = "delete_gps_data";
 
 const notify_configuration_update = "notify_configdb_updated";
 const notify_measurements_update = "notify_measurements_updated";
@@ -117,6 +118,11 @@ module.exports = {
       socket.on(command_replace_measurements, function (data) {
         measurements.replaceMeasurements(data);
         socket.emit(notify_measurements_update, measurements.getMeasurements());
+      });
+
+      socket.on(command_delete_gps_data, function (args) {
+        gps.deleteGPS();
+        socket.emit(notify_gps_update, gps.getGPSData());
       });
 
       socket.on(request_configuration_data, function (host) {
