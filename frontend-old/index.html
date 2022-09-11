@@ -318,7 +318,7 @@
           >download</i
         >
         <span style="color: white" class="mdc-button__label"
-          >Download Data</span
+          >Download Power Monitoring Data (*.csv)</span
         >
       </button>
 
@@ -329,7 +329,9 @@
       >
         <span class="mdc-button__ripple"></span>
         <i class="material-icons mdc-button__icon" aria-hidden="true">upload</i>
-        <span style="color: white" class="mdc-button__label">Upload Data</span>
+        <span style="color: white" class="mdc-button__label"
+          >Upload Power Monitoring Data (*.csv)</span
+        >
       </button>
 
       <button
@@ -342,7 +344,7 @@
           >delete_forever</i
         >
         <span style="color: white" class="mdc-button__label"
-          >Delete Collected Data</span
+          >Delete Power Monitoring Data</span
         >
       </button>
     </div>
@@ -553,6 +555,20 @@
         >
         <span style="color: white" class="mdc-button__label"
           >Download GPS Monitoring Data (*.csv)</span
+        >
+      </button>
+
+      <button
+        style="margin-top: 10px"
+        class="mdc-button mdc-button--raised mdc-button--leading"
+        id="gpsMonitoringDownloadRawButton"
+      >
+        <span class="mdc-button__ripple"></span>
+        <i class="material-icons mdc-button__icon" aria-hidden="true"
+          >download</i
+        >
+        <span style="color: white" class="mdc-button__label"
+          >Download Raw GPS Monitoring Data (*.txt)</span
         >
       </button>
 
@@ -1096,6 +1112,36 @@
             style="display: flex; margin-bottom: 10px; margin-top: 10px"
             class="mdc-button mdc-button--outlined"
             id="gpsMonitoringDownloadModalButton"
+          >
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">Download</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!--#endregion-->
+    <!--#region GPS MONITORING DOWNLOAD RAW MODAL-->
+    <div id="gpsMonitoringDownloadRawModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close" id="gpsMonitoringDownloadRawModalClose"
+            >&times;</span
+          >
+          <p style="color: white"><b>Download Raw GPS Monitoring Data</b></p>
+        </div>
+        <div class="modal-body">
+          <div
+            id="gpsMonitoringDownloadRawModalSelector"
+            class="mdc-form-field"
+            style="flex-direction: column"
+          >
+            <!--GENERATED AT RUNTIME-->
+          </div>
+
+          <button
+            style="display: flex; margin-bottom: 10px; margin-top: 10px"
+            class="mdc-button mdc-button--outlined"
+            id="gpsMonitoringDownloadRawModalButton"
           >
             <span class="mdc-button__ripple"></span>
             <span class="mdc-button__label">Download</span>

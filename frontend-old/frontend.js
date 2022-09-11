@@ -73,6 +73,12 @@ let gpsMonitoringDownloadModalClose;
 let gpsMonitoringDownloadModalButton;
 let gpsMonitoringDownloadModalSelector;
 
+let gpsMonitoringDownloadRawButton;
+let gpsMonitoringDownloadRawModal;
+let gpsMonitoringDownloadRawModalClose;
+let gpsMonitoringDownloadRawModalButton;
+let gpsMonitoringDownloadRawModalSelector;
+
 //Variables
 var socket;
 var measurementChart;
@@ -367,6 +373,49 @@ window.onload = function () {
     socket.emit("request_gps_monitoring_exportdb_csv", JSON.stringify(accessPoints));
   };
 
+  //Initialize the GPS Monitoring raw download dialog
+  gpsMonitoringDownloadRawButton.onclick = function () {
+    gpsMonitoringDownloadRawModal.style.display = "block";
+
+    //Remove all children
+    while (gpsMonitoringDownloadRawModalSelector.children.length > 0)
+      gpsMonitoringDownloadRawModalSelector.removeChild(0);
+
+    //Collect a list of all access points
+    let accessPoints = [];
+    for (let i = 0; i < lastGPSData.length; i++) {
+      if (!accessPoints.includes(lastGPSData[i].accessPoint))
+        accessPoints.push(lastGPSData[i].accessPoint);
+    };
+
+    //Create the list of downloadable access point data
+    for (let i = 0; i < accessPoints.length; i++) {
+      let element = document.createElement("div");
+      element.innerHTML = downloadDataItem.replace("$NAME$", accessPoints[i]);
+      gpsMonitoringDownloadRawModalSelector.appendChild(element);
+    }
+  };
+
+  //Close the GPS Monitoring download raw dialog
+  gpsMonitoringDownloadRawModalClose.onclick = function () {
+    gpsMonitoringDownloadRawModal.style.display = "none";
+  };
+
+  // Download the actual GPS Monitoring raw data
+  gpsMonitoringDownloadRawModalButton.onclick = function () {
+    gpsMonitoringDownloadRawModal.style.display = "none";
+    let accessPoints = [];
+
+    //Collect all selected access points
+    for (let i = 0; i < gpsMonitoringDownloadRawModalSelector.children.length; i++) {
+      if (gpsMonitoringDownloadRawModalSelector.children[i].querySelector("#checkbox-1").checked) {
+        accessPoints.push(gpsMonitoringDownloadRawModalSelector.children[i].querySelector("label").innerHTML);
+      }
+    }
+
+    socket.emit("request_gps_monitoring_exportdb_raw", JSON.stringify(accessPoints));
+  };
+
   //Close the exception dialog
   exceptionModalClose.onclick = () => {
     exceptionModal.style.display = "none";
@@ -524,6 +573,7 @@ window.onload = function () {
   window.onclick = (event) => {
     if (event.target == downloadModal) downloadModal.style.display = "none";
     if (event.target == gpsMonitoringDownloadModal) gpsMonitoringDownloadModal.style.display = "none";
+    if (event.target == gpsMonitoringDownloadRawModal) gpsMonitoringDownloadRawModal.style.display = "none";
     if (event.target == addConfigurationModal)
       addConfigurationModal.style.display = "none";
     if (event.target == updateConfigurationModal)
@@ -745,6 +795,12 @@ function initialize() {
   gpsMonitoringDownloadModalClose = document.getElementById("gpsMonitoringDownloadModalClose");
   gpsMonitoringDownloadModalButton = document.getElementById("gpsMonitoringDownloadModalButton");
   gpsMonitoringDownloadModalSelector = document.getElementById("gpsMonitoringDownloadModalSelector");
+
+  gpsMonitoringDownloadRawModal = document.getElementById("gpsMonitoringDownloadRawModal");
+  gpsMonitoringDownloadRawButton = document.getElementById("gpsMonitoringDownloadRawButton");
+  gpsMonitoringDownloadRawModalClose = document.getElementById("gpsMonitoringDownloadRawModalClose");
+  gpsMonitoringDownloadRawModalButton = document.getElementById("gpsMonitoringDownloadRawModalButton");
+  gpsMonitoringDownloadRawModalSelector = document.getElementById("gpsMonitoringDownloadRawModalSelector");
 
   addConfigurationHostField = new mdc.textField.MDCTextField(
     document.querySelector("#addConfigurationHostField")

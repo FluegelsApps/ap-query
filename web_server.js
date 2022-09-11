@@ -25,6 +25,8 @@ const notify_gps_update = "notify_gps_updated";
 const request_configuration_data = "request_configdb_data";
 const request_export_data = "request_exportdb_file";
 const request_session_information = "request_session_info";
+const request_export_gps_csv = "request_gps_monitoring_exportdb_csv";
+const request_export_gps_raw = "request_gps_monitoring_exportdb_raw";
 
 const response_configuration_data = "response_configdb_data";
 const response_export_data = "response_exportdb_file";
@@ -133,6 +135,16 @@ module.exports = {
 
       socket.on(request_session_information, function (host) {
         socket.emit(response_session_information, JSON.stringify(ssh.getConnectionStats(host)));
+      });
+
+      socket.on(request_export_gps_csv, function (accessPoints) {
+        // TODO: Implement CSV Export
+        console.log("GPS CSV Export Requested");
+      });
+
+      socket.on(request_export_gps_raw, function (accessPoints) {
+        // TODO: Implement Raw Export
+        console.log("GPS Raw Export Requested");
       });
     });
 
