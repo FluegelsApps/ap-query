@@ -8,7 +8,8 @@ module.exports = {
     initialize: function () {
         /**
          * Data structure:
-         * Timestamp
+         * Timestamp (UTC)
+         * Timestamp (Local)
          * Access Point DNS or Address
          * Latitude
          * North or South
@@ -32,7 +33,7 @@ module.exports = {
                 ? new SQL.Database(fs.readFileSync(gpsDatabasePath))
                 : new SQL.Database()
             gpsDatabase.run(
-                'CREATE TABLE IF NOT EXISTS gps (timestamp float, accessPoint string, latitude string, latitudeOrientation string, longitude string, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int, original string);'
+                'CREATE TABLE IF NOT EXISTS gps (timestamp long, timestampUTC float, accessPoint string, latitude string, latitudeOrientation string, longitude string, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int, original string);'
             )
         })
     },
@@ -58,6 +59,7 @@ module.exports = {
     },
     insertGPS: function (
         timestamp,
+        timestampUTC,
         accessPoint,
         latitude,
         latitudeOrientation,
@@ -77,7 +79,7 @@ module.exports = {
     ) {
         console.log(accessPoint);
         gpsDatabase.run(
-            `INSERT INTO gps VALUES(${timestamp}, '${accessPoint}', '${latitude}', '${latitudeOrientation}', '${longitude}', '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum}, '${original}');`
+            `INSERT INTO gps VALUES(${timestamp}, ${timestampUTC}, '${accessPoint}', '${latitude}', '${latitudeOrientation}', '${longitude}', '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum}, '${original}');`
         )
         this.saveInternal()
     },
@@ -100,7 +102,7 @@ module.exports = {
         let gpsData = '';
         while (downloadStatement.step()) {
             let instance = downloadStatement.getAsObject()
-            gpsData = `${gpsData}${instance.timestamp}, '${instance.accessPoint}', '${instance.latitude}', '${instance.latitudeOrientation}', '${instance.longitude}', '${instance.longitudeOrientation}', ${instance.quality}, ${instance.satellites}, ${instance.horizontalDilution}, ${instance.altitude}, '${instance.altitudeUnits}', ${instance.geoidalSeparation}, '${instance.geoidalSeparationUnits}', '${instance.diffDataAge}', ${instance.diffRefStationID}, ${instance.checksum}\n`
+            gpsData = `${gpsData}${instance.timestampUTC}, '${instance.accessPoint}', '${instance.latitude}', '${instance.latitudeOrientation}', '${instance.longitude}', '${instance.longitudeOrientation}', ${instance.quality}, ${instance.satellites}, ${instance.horizontalDilution}, ${instance.altitude}, '${instance.altitudeUnits}', ${instance.geoidalSeparation}, '${instance.geoidalSeparationUnits}', '${instance.diffDataAge}', ${instance.diffRefStationID}, ${instance.checksum}\n`
         }
 
         return (

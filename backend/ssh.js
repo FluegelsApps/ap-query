@@ -235,6 +235,7 @@ class SSHConnection {
       console.log("Received content: " + data.length);
 
       gps.insertGPS(
+        new Date().getTime(),
         nullableFloat(data[1]),
         this.host,
         nullable(data[2]),

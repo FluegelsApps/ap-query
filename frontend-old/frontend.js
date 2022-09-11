@@ -59,10 +59,14 @@ let powerMonitoringDisplaySwitchParent;
 
 //GPS Monitoring Database Interface
 var gpsMapLoaded = false;
+var gpsMonitoringAPFilter = " ";
+var gpsMonitoringTimeFilter = -1;
+var gpsMonitoringDisplayType = "map";
 var lastGPSData;
 
 let gpsMap;
 let gpsMonitoringCard;
+let gpsMonitoringTable;
 let gpsMonitoringCardToggle;
 let gpsMonitoringAPSelector;
 let gpsMonitoringDeleteButton;
@@ -449,6 +453,12 @@ window.onload = function () {
     updateMeasurements(lastMeasurements);
   };
 
+  //Listen for changes in gps display type
+  gpsMonitoringDisplaySwitchParent.onclick = () => {
+    gpsMonitoringDisplayType = gpsMonitoringDisplaySwitch.selected ? "table" : "map";
+    updateGPSData(lastGPSData);
+  }
+
   //Listen for changes to update the validation
   addConfigurationHostField.listen(
     "input",
@@ -540,8 +550,6 @@ window.onload = function () {
   //Listen for changes of the chart access points selector
   powerMonitoringAPSelector.listen("MDCSelect:change", () => {
     selectedAP = powerMonitoringAPSelector.value;
-
-    //Update the graph
     updateMeasurements(lastMeasurements);
   });
 
@@ -570,6 +578,38 @@ window.onload = function () {
 
     //Update the graph
     updateMeasurements(lastMeasurements);
+  });
+
+  //Listen for changes to the GPS monitoring AP selector
+  gpsMonitoringAPSelector.listen("MDCSelect:change", () => {
+    gpsMonitoringAPFilter = gpsMonitoringAPSelector.value;
+    updateGPSData(lastGPSData);
+  });
+
+  //Listen for changes to the GPS monitoring time selector
+  gpsMonitoringTimeSelector.listen("MDCSelect:change", () => {
+    switch (gpsMonitoringTimeSelector.value) {
+      case "ten_minutes":
+        gpsMonitoringTimeFilter = 10 * 60 * 1000;
+        break;
+      case "hour":
+        gpsMonitoringTimeFilter = 60 * 60 * 1000;
+        break;
+      case "twelve_hours":
+        gpsMonitoringTimeFilter = 12 * 60 * 60 * 1000;
+        break;
+      case "day":
+        gpsMonitoringTimeFilter = 24 * 60 * 60 * 1000;
+        break;
+      case "week":
+        gpsMonitoringTimeFilter = 7 * 24 * 60 * 60 * 1000;
+        break;
+      case "all":
+        gpsMonitoringTimeFilter = -1;
+        break;
+    }
+
+    updateGPSData(lastGPSData);
   });
 
   //Delete the contents of the gps monitoring database
@@ -871,8 +911,8 @@ function initialize() {
   );
 
   configurationTable = document.getElementById("configurationTable");
-
   measurementTable = document.getElementById("measurementTable");
+  gpsMonitoringTable = document.getElementById("gpsMonitoringTable");
 
   //Initialize the measurement chart
   measurementChart = new Chart(
@@ -1072,54 +1112,113 @@ function updateMeasurements(measurements) {
 }
 
 function updateGPSData(gpsData) {
+  var accessPoints = [];
   var positions = [];
   var clusterPositions = [];
 
-  for (var i = 0; i < gpsData.length; i++) {
-    let correctedLatitude = minutesToDegrees(gpsData[i].latitude);
-    let correctedLongitude = minutesToDegrees(gpsData[i].longitude);
+  document.getElementById("gps-map").style.display = gpsMonitoringDisplayType == "map" ? "block" : "none";
+  document.getElementById("gpsMonitoringTableParent").style.display = gpsMonitoringDisplayType == "table" ? "block" : "none";
+  while (gpsMonitoringTable.rows.length > 1) gpsMonitoringTable.deleteRow(1);
 
-    positions.push(createGeoJSONCircle(
-      correctedLatitude,
-      correctedLongitude,
-      1.0
-    ))
+  for (let i = 0; i < gpsData.length; i++) {
+    if (!accessPoints.includes(gpsData[i].accessPoint))
+      accessPoints.push(gpsData[i].accessPoint);
+  }
 
-    clusterPositions.push({
-      type: "Feature",
-      geometry: {
-        "type": "Point",
-        "coordinates": [
-          correctedLongitude,
+  if (gpsMonitoringAPFilter == " " && accessPoints != null && accessPoints.length > 0) {
+    gpsMonitoringAPFilter = accessPoints[0];
+    updateGPSData(gpsData);
+    gpsMonitoringAPSelector.value = accessPoints[0];
+    return;
+  }
+
+  if (gpsMonitoringDisplayType == "map") {
+    for (let i = 0; i < gpsData.length; i++) {
+      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp)) {
+        let correctedLatitude = minutesToDegrees(gpsData[i].latitude);
+        let correctedLongitude = minutesToDegrees(gpsData[i].longitude);
+
+        positions.push(createGeoJSONCircle(
           correctedLatitude,
-        ],
-      },
-    });
+          correctedLongitude,
+          1.0
+        ))
+
+        clusterPositions.push({
+          type: "Feature",
+          geometry: {
+            "type": "Point",
+            "coordinates": [
+              correctedLongitude,
+              correctedLatitude,
+            ],
+          },
+        });
+      }
+
+      let positionsData = {
+        "type": "FeatureCollection",
+        "features": positions,
+      };
+
+      let positionsSource = {
+        type: "geojson",
+        data: positionsData,
+      };
+
+      let clusterPositionsData = {
+        "type": "FeatureCollection",
+        "features": clusterPositions,
+      };
+
+      let clusterPositionsSource = {
+        type: "geojson",
+        data: clusterPositionsData,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      }
+
+      if (gpsMap.getSource("positions") == null) gpsMap.addSource("positions", positionsSource);
+      else gpsMap.getSource("positions").setData(positionsData);
+
+      if (gpsMap.getSource("clusterPositions") == null) gpsMap.addSource("clusterPositions", clusterPositionsSource);
+      else gpsMap.getSource("clusterPositions").setData(clusterPositionsData)
+    }
+  } else if (gpsMonitoringDisplayType == "table") {
+    for (let i = 0; i < gpsData.length; i++) {
+      if (gpsData[i] != null && gpsData[i].accessPoint != null && gpsData[i].accessPoint == gpsMonitoringAPFilter && inTimeRange(gpsData[i].timestamp)) {
+        let row = gpsMonitoringTable.insertRow();
+        row.insertCell().innerHTML = formatUTCTime(gpsData[i].timestampUTC);
+        row.insertCell().innerHTML = gpsData[i].accessPoint ?? "-";
+        row.insertCell().innerHTML = `${gpsData[i].latitude ?? "-"} ${gpsData[i].latitudeOrientation}`;
+        row.insertCell().innerHTML = `${gpsData[i].longitude ?? "-"} ${gpsData[i].longitudeOrientation}`;
+        row.insertCell().innerHTML = gpsData[i].quality ?? "-"
+        row.insertCell().innerHTML = gpsData[i].satellites ?? "-";
+        row.insertCell().innerHTML = gpsData[i].horizontalDilution ?? "-";
+        row.insertCell().innerHTML = `${gpsData[i].altitude ?? "-"} ${gpsData[i].altitudeUnits}`;
+        row.insertCell().innerHTML = `${gpsData[i].geoidalSeparation ?? "-"} ${gpsData[i].geoidalSeparationUnits}`;
+        row.insertCell().innerHTML = gpsData[i].diffDataAge ?? "-";
+        row.insertCell().innerHTML = gpsData[i].diffRefStationID ?? "-";
+        row.insertCell().innerHTML = gpsData[i].checksum ?? "-";
+      }
+    }
   }
 
-  console.log(`Total position nodes: ${positions.length}`);
+  let parent = document.getElementById("gpsMonitoringChartSelectorParent");
+  if (accessPoints.length != parent.children.length - 1) {
+    for (let i = 1; i < parent.children.length; i++)
+      parent.removeChild(parent.children[i]);
 
-  let data = {
-    type: "geojson",
-    data: {
-      "type": "FeatureCollection",
-      "features": positions,
-    },
-  };
-
-  var clusterData = {
-    type: "geojson",
-    data: {
-      "type": "FeatureCollection",
-      "features": clusterPositions,
-    },
-    cluster: true,
-    clusterMaxZoom: 14,
-    clusterRadius: 50,
+    for (let i = 0; i < accessPoints.length; i++) {
+      var li = document.createElement("li");
+      li.innerHTML = measurementSelectorItem
+        .replace("$APNAME$", accessPoints[i])
+        .replace("$APDATA$", accessPoints[i]);
+      parent.appendChild(li);
+      gpsMonitoringAPSelector.layoutOptions();
+    }
   }
-
-  gpsMap.addSource('positions', data);
-  gpsMap.addSource('clusterPositions', clusterData);
 }
 
 function removeConfiguration(host) {
@@ -1147,6 +1246,27 @@ function inTimeRange(time) {
   return (
     new Date().getTime() - time <= selectedTimeSpan || selectedTimeSpan == -1
   );
+}
+
+function formatUTCTime(timestamp) {
+  let timestampString = timestamp.toString();
+
+  //Resolve milliseconds
+  let milliseconds = timestampString.includes(".") ? timestampString.split(".")[1] : "0";
+  timestampString = timestampString.replace(`.${milliseconds}`, "");
+
+  //Resolve seconds
+  let seconds = timestampString.substring(timestampString.length - 2);
+  timestampString = timestampString.substring(0, timestampString.length - 2);
+
+  //Resolve minutes
+  let minutes = timestampString.substring(timestampString.length - 2);
+  timestampString = timestampString.substring(0, timestampString.length - 2);
+
+  //Resolve hours
+  let hours = timestampString;
+
+  return `${hours}:${minutes}:${seconds}.${formatTime(parseInt(milliseconds))} UTC`;
 }
 
 //Source: https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js

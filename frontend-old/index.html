@@ -615,6 +615,52 @@
         >
       </button>
 
+      <div
+        id="gpsMonitoringTableParent"
+        style="
+          margin-top: 20px;
+          margin-bottom: 20px;
+          max-height: 35em;
+          overflow: scroll;
+        "
+      >
+        <!--timestamp,
+      timestampUTC,
+      accessPoint,
+      latitude,
+      latitudeOrientation,
+      longitude,
+      longitudeOrientation,
+      quality,
+      satellites,
+      horizontalDilution,
+      altitude,
+      altitudeUnits,
+      geoidalSeparation,
+      geoidalSeparationUnits,
+      diffDataAge,
+      diffRefStationID,
+      checksum,
+      original-->
+
+        <table id="gpsMonitoringTable" width="100%">
+          <tr>
+            <th><span class="material-icons">schedule</span></th>
+            <th><span class="material-icons">sensors</span></th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th><span class="material-icons">signal_wifi_4_bar</span></th>
+            <th><span class="material-icons">satellite_alt</span></th>
+            <th>Horizontal Dilution</th>
+            <th><span class="material-icons">height</th>
+            <th>Geoidal Separation</th>
+            <th>Differential Data Age</th>
+            <th>Differential Radio Station ID</th>
+            <th>Checksum</th>
+          </tr>
+        </table>
+      </div>
+
       <div style="width: 100%; height: 800px; margin-top: 10px" id="gps-map" />
     </div>
     <!--#endregion GPS MONITORING-->
