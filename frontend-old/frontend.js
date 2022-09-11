@@ -67,6 +67,8 @@ let gpsMonitoringCardToggle;
 let gpsMonitoringAPSelector;
 let gpsMonitoringDeleteButton;
 let gpsMonitoringTimeSelector;
+let gpsMonitoringDisplaySwitch;
+let gpsMonitoringDisplaySwitchParent;
 
 let gpsMonitoringDownloadButton;
 let gpsMonitoringDownloadModal;
@@ -694,14 +696,13 @@ window.onload = function () {
   });
 
   //Download the received database file
-  socket.on("response_exportdb_file", (content) => {
-    let anchor = document.createElement("a");
-    let blob = new Blob([content], { type: "text/csv" });
-    anchor.href = window.URL.createObjectURL(blob);
-    anchor.download = "measurements.csv";
-    anchor.click();
-    anchor.remove();
-  });
+  socket.on("response_exportdb_file", content => downloadFile(content, "measurements.csv", "text/csv"));
+
+  //Download the received gps database file
+  socket.on("response_gps_monitoring_exportdb_csv", content => downloadFile(content, "gps_monitoring_data.csv", "text/csv"));
+
+  //Download the received gps raw database file
+  socket.on("response_gps_monitoring_exportdb_raw", content => downloadFile(content, "gps_monitoring_raw_data.txt", "text"));
 
   //Show the requested session information
   socket.on("response_session_info", (rawInfo) => {
@@ -806,6 +807,11 @@ function initialize() {
   gpsMonitoringDownloadModalClose = document.getElementById("gpsMonitoringDownloadModalClose");
   gpsMonitoringDownloadModalButton = document.getElementById("gpsMonitoringDownloadModalButton");
   gpsMonitoringDownloadModalSelector = document.getElementById("gpsMonitoringDownloadModalSelector");
+
+  gpsMonitoringDisplaySwitchParent = document.getElementById("gpsMonitoringDisplaySwitchParent");
+  gpsMonitoringDisplaySwitch = new mdc.switchControl.MDCSwitch(
+    document.querySelector("#gpsMonitoringDisplaySwitch")
+  );
 
   gpsMonitoringDownloadRawModal = document.getElementById("gpsMonitoringDownloadRawModal");
   gpsMonitoringDownloadRawButton = document.getElementById("gpsMonitoringDownloadRawButton");
@@ -1091,6 +1097,8 @@ function updateGPSData(gpsData) {
     });
   }
 
+  console.log(`Total position nodes: ${positions.length}`);
+
   let data = {
     type: "geojson",
     data: {
@@ -1186,4 +1194,13 @@ function minutesToDegrees(value) {
   let minutes = parseFloat(stringValue.substring(stringValue.length - 7));
   let degrees = parseFloat(stringValue.replace(minutes.toString()));
   return isNaN(degrees) ? 0 : degrees + (minutes / 60);
+}
+
+function downloadFile(content, fileName, type) {
+  let anchor = document.createElement("a");
+  let blob = new Blob([content], { type });
+  anchor.href = window.URL.createObjectURL(blob);
+  anchor.download = fileName;
+  anchor.click();
+  anchor.remove();
 }

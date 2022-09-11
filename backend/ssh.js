@@ -250,7 +250,8 @@ class SSHConnection {
         nullable(data[12]),
         nullable(data[13]),
         nullableInt(idAndChecksum[0]),
-        nullableInt(idAndChecksum[1])
+        nullableInt(idAndChecksum[1]),
+        content[startIndex]
       );
       console.log("Saving data");
       io.emit(
