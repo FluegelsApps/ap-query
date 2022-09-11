@@ -43,15 +43,35 @@ let updateConfigurationPowerMonitoringSwitch;
 let updateConfigurationGPSMonitoringSwitch;
 let updateConfigurationSaveButton;
 
-//Measurement Database Interface
-let deleteDatabaseButton;
-let uploadDatabaseButton;
-let uploadDatabaseInput;
-let measurementChartSelector;
-let measurementTimeSelector;
-let measurementDisplaySwitch;
-let measurementDisplaySwitchParent;
+//Configuration
 let configurationTable;
+
+//Power Monitoring Database Interface
+let powerMonitoringCard;
+let powerMonitoringCardToggle;
+let powerMonitoringDeleteButton;
+let powerMonitoringUploadButton;
+let powerMonitoringUploadInput;
+let powerMonitoringAPSelector;
+let powerMonitoringTimeSelector;
+let powerMonitoringDisplaySwitch;
+let powerMonitoringDisplaySwitchParent;
+
+//GPS Monitoring Database Interface
+var gpsMapLoaded = false;
+var lastGPSData;
+
+let gpsMap;
+let gpsMonitoringCard;
+let gpsMonitoringCardToggle;
+let gpsMonitoringAPSelector;
+let gpsMonitoringTimeSelector;
+
+let gpsMonitoringDownloadButton;
+let gpsMonitoringDownloadModal;
+let gpsMonitoringDownloadModalClose;
+let gpsMonitoringDownloadModalButton;
+let gpsMonitoringDownloadModalSelector;
 
 //Variables
 var socket;
@@ -61,6 +81,12 @@ var selectedAP = " ";
 var selectedTimeSpan = -1;
 var lastMeasurements;
 var displayType = "chart";
+
+let powerMonitoringDisplayed = true;
+let powerMonitoringDisplays = [];
+
+let gpsMonitoringDisplayed = true;
+let gpsMonitoringDisplays = [];
 
 const configurationTableSwitch = `<button
 class="mdc-switch mdc-switch--unselected config-state-switch"
@@ -131,33 +157,109 @@ window.onload = function () {
   //Reference views
   initialize();
 
-  downloadButton.onclick = function () {
-    downloadModal.style.display = "block";
+  //Initialize MapBox
+  mapboxgl.accessToken = "pk.eyJ1IjoibTR4ZGV2IiwiYSI6ImNsN3c4cDN0dTBqNHIzb3MyMWwwenZsenQifQ.bpPCMxfKQiOPtJ2waiiPVg";
+  gpsMap = new mapboxgl.Map({
+    container: 'gps-map',
+    style: 'mapbox://styles/mapbox/streets-v11'
+  });
 
-    //Remove all children
-    while (downloadDataSelector.children.length > 0)
-      downloadDataSelector.removeChild(0);
+  gpsMap.on("load", function () {
+    gpsMapLoaded = true;
+    if (lastGPSData != null) updateGPSData(lastGPSData);
 
-    //Collect a list of all access points
-    accessPoints = [];
-    for (let i = 0; i < lastMeasurements.length; i++)
-      if (!accessPoints.includes(lastMeasurements[i].ap))
-        accessPoints.push(lastMeasurements[i].ap);
+    gpsMap.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'clusterPositions',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#51bbd6',
+          100,
+          '#f1f075',
+          750,
+          '#f28cb1'
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          20,
+          100,
+          30,
+          750,
+          40
+        ]
+      }
+    });
 
-    //Create the list of downloadable access point data
-    for (let i = 0; i < accessPoints.length; i++) {
-      let element = document.createElement("div");
-      element.innerHTML = downloadDataItem.replace("$NAME$", accessPoints[i]);
-      downloadDataSelector.appendChild(element);
+    gpsMap.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'clusterPositions',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      }
+    });
+
+    gpsMap.addLayer({
+      id: 'unclustered-point',
+      type: 'fill',
+      source: 'positions',
+      paint: {
+        "fill-color": "blue",
+        "fill-opacity": 0.6,
+      }
+    });
+  });
+
+  //Initialize the expandable power monitoring card
+  for (var i = 1; i < powerMonitoringCard.children.length; i++) {
+    powerMonitoringDisplays[i] = powerMonitoringCard.children[i].style.display;
+    powerMonitoringCard.children[i].style.display = powerMonitoringDisplayed ? powerMonitoringDisplays[i] : "none";
+  }
+
+  powerMonitoringCardToggle.onclick = function () {
+    powerMonitoringDisplayed = !powerMonitoringDisplayed;
+    powerMonitoringCardToggle.innerHTML = powerMonitoringCardToggle.innerHTML.replace(
+      powerMonitoringDisplayed ? "expand_more" : "expand_less",
+      powerMonitoringDisplayed ? "expand_less" : "expand_more"
+    );
+
+    for (var i = 1; i < powerMonitoringCard.children.length; i++) {
+      powerMonitoringCard.children[i].style.display = powerMonitoringDisplayed ? powerMonitoringDisplays[i] : "none";
     }
-  };
+  }
 
-  uploadDatabaseButton.onclick = function () {
+  //Initialize the expandable gps monitoring card
+  for (var i = 1; i < gpsMonitoringCard.children.length; i++) {
+    gpsMonitoringDisplays[i] = gpsMonitoringCard.children[i].style.display;
+    gpsMonitoringCard.children[i].style.display = gpsMonitoringDisplayed ? gpsMonitoringDisplays[i] : "none";
+  }
+
+  gpsMonitoringCardToggle.onclick = function () {
+    gpsMonitoringDisplayed = !gpsMonitoringDisplayed;
+    gpsMonitoringCardToggle.innerHTML = gpsMonitoringCardToggle.innerHTML.replace(
+      gpsMonitoringDisplayed ? "expand_more" : "expand_less",
+      gpsMonitoringDisplayed ? "expand_less" : "expand_more"
+    );
+
+    for (var i = 1; i < gpsMonitoringCard.children.length; i++) {
+      gpsMonitoringCard.children[i].style.display = gpsMonitoringDisplayed ? gpsMonitoringDisplays[i] : "none";
+    }
+  }
+
+  powerMonitoringUploadButton.onclick = function () {
     $("#uploadInput").trigger("click");
   };
 
   //Listen for file selection on update database button
-  uploadDatabaseInput.addEventListener(
+  powerMonitoringUploadInput.addEventListener(
     "change",
     (event) => {
       let file = event.target.files[0];
@@ -176,25 +278,93 @@ window.onload = function () {
     false
   );
 
+  //Initialize the download modal
+  downloadButton.onclick = function () {
+    downloadModal.style.display = "block";
+
+    //Remove all children
+    while (downloadDataSelector.children.length > 0)
+      downloadDataSelector.removeChild(0);
+
+    //Collect a list of all access points
+    let accessPoints = [];
+    for (let i = 0; i < lastMeasurements.length; i++) {
+      if (!accessPoints.includes(lastMeasurements[i].ap))
+        accessPoints.push(lastMeasurements[i].ap);
+    }
+
+    //Create the list of downloadable access point data
+    for (let i = 0; i < accessPoints.length; i++) {
+      let element = document.createElement("div");
+      element.innerHTML = downloadDataItem.replace("$NAME$", accessPoints[i]);
+      downloadDataSelector.appendChild(element);
+    }
+  };
+
   //Close the download dialog
   downloadModalClose.onclick = function () {
     downloadModal.style.display = "none";
   };
 
-  //Download the acutal data
+  //Download the actual data
   downloadDataButton.onclick = function () {
     downloadModal.style.display = "none";
     let accessPoints = [];
 
     //Collect all selected access points
-    for (let i = 0; i < downloadDataSelector.children.length; i++)
-      if (downloadDataSelector.children[i].querySelector("#checkbox-1").checked)
+    for (let i = 0; i < downloadDataSelector.children.length; i++) {
+      if (downloadDataSelector.children[i].querySelector("#checkbox-1").checked) {
         accessPoints.push(
           downloadDataSelector.children[i].querySelector("label").innerHTML
         );
+      }
+    }
 
     //Send the request ot the web server
     socket.emit("request_exportdb_file", JSON.stringify(accessPoints));
+  };
+
+  //Initialize the GPS Monitoring download dialog
+  gpsMonitoringDownloadButton.onclick = function () {
+    gpsMonitoringDownloadModal.style.display = "block";
+
+    //Remove all children
+    while (gpsMonitoringDownloadModalSelector.children.length > 0)
+      gpsMonitoringDownloadModalSelector.removeChild(0);
+
+    //Collect a list of all access points
+    let accessPoints = [];
+    for (let i = 0; i < lastGPSData.length; i++) {
+      if (!accessPoints.includes(lastGPSData[i].accessPoint))
+        accessPoints.push(lastGPSData[i].accessPoint);
+    }
+
+    //Create the list of downloadable access point data
+    for (let i = 0; i < accessPoints.length; i++) {
+      let element = document.createElement("div");
+      element.innerHTML = downloadDataItem.replace("$NAME$", accessPoints[i]);
+      gpsMonitoringDownloadModalSelector.appendChild(element);
+    }
+  };
+
+  //Close the GPS Monitoring download dialog
+  gpsMonitoringDownloadModalClose.onclick = function () {
+    gpsMonitoringDownloadModal.style.display = "none";
+  };
+
+  //Download the actual GPS Monitoring data
+  gpsMonitoringDownloadModalButton.onclick = function () {
+    gpsMonitoringDownloadModal.style.display = "none";
+    let accessPoints = [];
+
+    //Collect all selected access points
+    for (let i = 0; i < gpsMonitoringDownloadModalSelector.children.length; i++) {
+      if (gpsMonitoringDownloadModalSelector.children[i].querySelector("#checkbox-1").checked) {
+        accessPoints.push(gpsMonitoringDownloadModalSelector.children[i].querySelector("label").innerHTML);
+      }
+    }
+
+    socket.emit("request_gps_monitoring_exportdb_csv", JSON.stringify(accessPoints));
   };
 
   //Close the exception dialog
@@ -222,8 +392,8 @@ window.onload = function () {
   };
 
   //Listen for changes in display type
-  measurementDisplaySwitchParent.onclick = () => {
-    displayType = measurementDisplaySwitch.selected ? "table" : "chart";
+  powerMonitoringDisplaySwitchParent.onclick = () => {
+    displayType = powerMonitoringDisplaySwitch.selected ? "table" : "chart";
     updateMeasurements(lastMeasurements);
   };
 
@@ -300,7 +470,7 @@ window.onload = function () {
   };
 
   //Delete the contents of the measurements database
-  deleteDatabaseButton.onclick = () => {
+  powerMonitoringDeleteButton.onclick = () => {
     //Prompt the user to confirm the action
     if (confirm("Are you sure?")) {
       //Send the command to the web server
@@ -316,16 +486,16 @@ window.onload = function () {
   };
 
   //Listen for changes of the chart access points selector
-  measurementChartSelector.listen("MDCSelect:change", () => {
-    selectedAP = measurementChartSelector.value;
+  powerMonitoringAPSelector.listen("MDCSelect:change", () => {
+    selectedAP = powerMonitoringAPSelector.value;
 
     //Update the graph
     updateMeasurements(lastMeasurements);
   });
 
   //Listen for changes of the chart time selector
-  measurementTimeSelector.listen("MDCSelect:change", () => {
-    switch (measurementTimeSelector.value) {
+  powerMonitoringTimeSelector.listen("MDCSelect:change", () => {
+    switch (powerMonitoringTimeSelector.value) {
       case "ten_minutes":
         selectedTimeSpan = 10 * 60 * 1000;
         break;
@@ -353,6 +523,7 @@ window.onload = function () {
   //Close all modals when the window is clicked
   window.onclick = (event) => {
     if (event.target == downloadModal) downloadModal.style.display = "none";
+    if (event.target == gpsMonitoringDownloadModal) gpsMonitoringDownloadModal.style.display = "none";
     if (event.target == addConfigurationModal)
       addConfigurationModal.style.display = "none";
     if (event.target == updateConfigurationModal)
@@ -458,7 +629,8 @@ window.onload = function () {
 
   //Update the gps data
   socket.on("notify_gps_updated", (rawGPS) => {
-    updateGPSData(JSON.parse(rawGPS));
+    if (gpsMapLoaded) updateGPSData(JSON.parse(rawGPS));
+    lastGPSData = JSON.parse(rawGPS);
   });
 
   //Download the received database file
@@ -538,23 +710,41 @@ function initialize() {
     "addConfigurationModalClose"
   );
 
-  deleteDatabaseButton = document.getElementById("deleteDatabaseButton");
-  uploadDatabaseInput = document.getElementById("uploadInput");
-  uploadDatabaseButton = document.getElementById("uploadButton");
+  powerMonitoringCard = document.getElementById("power-monitoring-card");
+  powerMonitoringCardToggle = document.getElementById("power-monitoring-card-toggle");
+  powerMonitoringDeleteButton = document.getElementById("deleteDatabaseButton");
+  powerMonitoringUploadInput = document.getElementById("uploadInput");
+  powerMonitoringUploadButton = document.getElementById("uploadButton");
 
-  measurementDisplaySwitchParent = document.getElementById(
+  powerMonitoringDisplaySwitchParent = document.getElementById(
     "measurementDisplaySwitchParent"
   );
-  measurementDisplaySwitch = new mdc.switchControl.MDCSwitch(
+  powerMonitoringDisplaySwitch = new mdc.switchControl.MDCSwitch(
     document.querySelector("#measurementDisplaySwitch")
   );
 
-  measurementChartSelector = new mdc.select.MDCSelect(
+  powerMonitoringAPSelector = new mdc.select.MDCSelect(
     document.getElementById("measurementChartSelector")
   );
-  measurementTimeSelector = new mdc.select.MDCSelect(
+  powerMonitoringTimeSelector = new mdc.select.MDCSelect(
     document.getElementById("measurementTimeSelector")
   );
+
+  gpsMonitoringCard = document.getElementById("gps-monitoring-card");
+  gpsMonitoringCardToggle = document.getElementById("gps-monitoring-card-toggle");
+
+  gpsMonitoringAPSelector = new mdc.select.MDCSelect(
+    document.getElementById("gpsMonitoringChartSelector")
+  );
+  gpsMonitoringTimeSelector = new mdc.select.MDCSelect(
+    document.getElementById("gpsMonitoringTimeSelector")
+  );
+
+  gpsMonitoringDownloadModal = document.getElementById("gpsMonitoringDownloadModal");
+  gpsMonitoringDownloadButton = document.getElementById("gpsMonitoringDownloadButton");
+  gpsMonitoringDownloadModalClose = document.getElementById("gpsMonitoringDownloadModalClose");
+  gpsMonitoringDownloadModalButton = document.getElementById("gpsMonitoringDownloadModalButton");
+  gpsMonitoringDownloadModalSelector = document.getElementById("gpsMonitoringDownloadModalSelector");
 
   addConfigurationHostField = new mdc.textField.MDCTextField(
     document.querySelector("#addConfigurationHostField")
@@ -699,7 +889,7 @@ function updateMeasurements(measurements) {
     if (selectedAP == " " && accessPoints != null && accessPoints.length > 0) {
       selectedAP = accessPoints[0];
       updateMeasurements(measurements);
-      measurementChartSelector.value = selectedAP;
+      powerMonitoringAPSelector.value = selectedAP;
       return;
     }
 
@@ -800,7 +990,7 @@ function updateMeasurements(measurements) {
         .replace("$APNAME$", accessPoints[i])
         .replace("$APDATA$", normalize(accessPoints[i]));
       parent.appendChild(li);
-      measurementChartSelector.layoutOptions();
+      powerMonitoringAPSelector.layoutOptions();
     }
   }
 
@@ -809,8 +999,52 @@ function updateMeasurements(measurements) {
 }
 
 function updateGPSData(gpsData) {
-  console.log("Received new GPS Data");
-  console.log(gpsData);
+  var positions = [];
+  var clusterPositions = [];
+
+  for (var i = 0; i < gpsData.length; i++) {
+    let correctedLatitude = minutesToDegrees(gpsData[i].latitude);
+    let correctedLongitude = minutesToDegrees(gpsData[i].longitude);
+
+    positions.push(createGeoJSONCircle(
+      correctedLatitude,
+      correctedLongitude,
+      1.0
+    ))
+
+    clusterPositions.push({
+      type: "Feature",
+      geometry: {
+        "type": "Point",
+        "coordinates": [
+          correctedLongitude,
+          correctedLatitude,
+        ],
+      },
+    });
+  }
+
+  let data = {
+    type: "geojson",
+    data: {
+      "type": "FeatureCollection",
+      "features": positions,
+    },
+  };
+
+  var clusterData = {
+    type: "geojson",
+    data: {
+      "type": "FeatureCollection",
+      "features": clusterPositions,
+    },
+    cluster: true,
+    clusterMaxZoom: 14,
+    clusterRadius: 50,
+  }
+
+  gpsMap.addSource('positions', data);
+  gpsMap.addSource('clusterPositions', clusterData);
 }
 
 function removeConfiguration(host) {
@@ -838,4 +1072,51 @@ function inTimeRange(time) {
   return (
     new Date().getTime() - time <= selectedTimeSpan || selectedTimeSpan == -1
   );
+}
+
+//Source: https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js
+function createGeoJSONCircle(latitude, longitude, radius) {
+  var ret = [];
+  var distanceX = radius / (111.320 * Math.cos(latitude * Math.PI / 180));
+  var distanceY = radius / 110.574;
+
+  var theta, x, y;
+  for (var i = 0; i < 64; i++) {
+    theta = (i / 64) * (2 * Math.PI);
+    x = distanceX * Math.cos(theta);
+    y = distanceY * Math.sin(theta);
+
+    ret.push([longitude + x, latitude + y]);
+  }
+  ret.push(ret[0]);
+
+  return {
+    "type": "Feature",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [ret],
+    },
+  };
+
+  /*return {
+    "type": "geojson",
+    "data": {
+      "type": "FeatureCollection",
+      "features": [{
+        "type": "Feature",
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [ret],
+        },
+      }],
+    },
+  };*/
+}
+
+function minutesToDegrees(value) {
+  var stringValue = value.toString()
+  stringValue = stringValue.substring(0, stringValue.indexOf(".") + 5);
+  let minutes = parseFloat(stringValue.substring(stringValue.length - 7));
+  let degrees = parseFloat(stringValue.replace(minutes.toString()));
+  return isNaN(degrees) ? 0 : degrees + (minutes / 60);
 }

@@ -235,21 +235,22 @@ class SSHConnection {
       console.log("Received content: " + data.length);
 
       gps.insertGPS(
-        parseFloat(nullable(data[1])),
-        parseFloat(nullable(data[2])),
+        nullableFloat(data[1]),
+        this.host,
+        nullable(data[2]),
         nullable(data[3]),
-        parseFloat(nullable(data[4])),
+        nullable(data[4]),
         nullable(data[5]),
-        parseInt(nullable(data[6])),
-        parseInt(nullable(data[7])),
-        parseFloat(nullable(data[8])),
-        parseFloat(nullable(data[9])),
+        nullableInt(data[6]),
+        nullableInt(data[7]),
+        nullableFloat(data[8]),
+        nullableFloat(data[9]),
         nullable(data[10]),
-        parseFloat(nullable(data[11])),
+        nullableFloat(data[11]),
         nullable(data[12]),
         nullable(data[13]),
-        parseInt(nullable(idAndChecksum[0])),
-        parseInt(nullable(idAndChecksum[1]))
+        nullableInt(idAndChecksum[0]),
+        nullableInt(idAndChecksum[1])
       );
       console.log("Saving data");
       io.emit(
@@ -274,4 +275,12 @@ class SSHConnection {
 
 function nullable(value) {
   return value.length > 0 ? value : "null";
+}
+
+function nullableInt(value) {
+  return value.length > 0 ? parseInt(value) : "null";
+}
+
+function nullableFloat(value) {
+  return value.length > 0 ? parseFloat(value) : "null";
 }

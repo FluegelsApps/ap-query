@@ -9,6 +9,7 @@ module.exports = {
         /**
          * Data structure:
          * Timestamp
+         * Access Point DNS or Address
          * Latitude
          * North or South
          * Longitude
@@ -30,7 +31,7 @@ module.exports = {
                 ? new SQL.Database(fs.readFileSync(gpsDatabasePath))
                 : new SQL.Database()
             gpsDatabase.run(
-                'CREATE TABLE IF NOT EXISTS gps (timestamp float, latitude float, latitudeOrientation string, longitude float, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int);'
+                'CREATE TABLE IF NOT EXISTS gps (timestamp float, accessPoint string, latitude string, latitudeOrientation string, longitude string, longitudeOrientation string, quality int, satellites int, horizontalDilution float, altitude float, altitudeUnits string, geoidalSeparation float, geoidalSeparationUnits string, diffDataAge string, diffRefStationID int, checksum int);'
             )
         })
     },
@@ -56,6 +57,7 @@ module.exports = {
     },
     insertGPS: function (
         timestamp,
+        accessPoint,
         latitude,
         latitudeOrientation,
         longitude,
@@ -71,15 +73,14 @@ module.exports = {
         diffRefStationID,
         checksum
     ) {
-        console.log(`INSERT INTO gps VALUES(${timestamp}, ${latitude}, '${latitudeOrientation}', ${longitude}, '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`);
-
+        console.log(accessPoint);
         gpsDatabase.run(
-            `INSERT INTO gps VALUES(${timestamp}, ${latitude}, '${latitudeOrientation}', ${longitude}, '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`
+            `INSERT INTO gps VALUES(${timestamp}, '${accessPoint}', '${latitude}', '${latitudeOrientation}', '${longitude}', '${longitudeOrientation}', ${quality}, ${satellites}, ${horizontalDilution}, ${altitude}, '${altitudeUnits}', ${geoidalSeparation}, '${geoidalSeparationUnits}', ${diffDataAge}, ${diffRefStationID}, ${checksum});`
         )
         this.saveInternal()
     },
     deleteGPS: function () {
         gpsDatabase.run('DELETE FROM gps')
         this.saveInternal()
-    }
+    },
 }
