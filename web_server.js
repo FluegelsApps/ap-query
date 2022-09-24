@@ -1,5 +1,6 @@
 const https = require("https");
 const express = require("express");
+const body_parser = require("body-parser");
 const app = express();
 const { Server } = require("socket.io");
 const ssh = require("./backend/ssh.js");
@@ -8,10 +9,6 @@ const certmanager = require("./backend/certmanager.js");
 const config = require("./backend/config.js");
 const measurements = require("./backend/measurements.js");
 const gps = require("./backend/gps.js");
-
-const command_insert_configuration = "insert_configuration";
-const command_remove_configuration = "remove_configuration";
-const command_update_configuration = "update_configuration";
 
 const command_start_connection = "start_connection";
 const command_stop_connection = "stop_connection";
@@ -23,13 +20,11 @@ const notify_configuration_update = "notify_configdb_updated";
 const notify_measurements_update = "notify_measurements_updated";
 const notify_gps_update = "notify_gps_updated";
 
-const request_configuration_data = "request_configdb_data";
 const request_export_data = "request_exportdb_file";
 const request_session_information = "request_session_info";
 const request_export_gps_csv = "request_gps_monitoring_exportdb_csv";
 const request_export_gps_raw = "request_gps_monitoring_exportdb_raw";
 
-const response_configuration_data = "response_configdb_data";
 const response_export_data = "response_exportdb_file";
 const response_session_information = "response_session_info";
 const response_export_gps_csv = "response_gps_monitoring_exportdb_csv";
@@ -42,6 +37,11 @@ module.exports = {
       app
     );
     const io = new Server(server);
+
+    //Middleware configuration
+    app.use(body_parser.urlencoded({ extended: true }));
+    app.use(body_parser.raw());
+    app.use(body_parser.json());
 
     //Web Page
     app.get("/", (req, res) => {
@@ -68,6 +68,44 @@ module.exports = {
       res.send(measurements.getMeasurements());
     });
 
+    app.get("/api/configuration", (req, res) => {
+      res.contentType = "application/json";
+      res.send(config.getConfiguration());
+    })
+
+    app.get("/api/configuration/:id", (req, res) => {
+      res.contentType = "application/json";
+      res.send(config.requestConfiguration(req.params.id));
+    });
+
+    app.post("/api/configuration", (req, res) => {
+      config.insertConfiguration(
+        req.body.host,
+        req.body.user,
+        req.body.password,
+        req.body.queryInterval,
+        req.body.powerMonitoring,
+        req.body.gpsMonitoring
+      )
+
+      res.contentType = "application/json";
+      res.send(config.getConfiguration());
+    });
+
+    app.put("/api/configuration", (req, res) => {
+      config.updateConfiguration(req.body);
+
+      res.contentType = "application/json";
+      res.send(config.getConfiguration());
+    });
+
+    app.delete("/api/configuration/:id", (req, res) => {
+      config.removeConfiguration(req.params.id);
+
+      res.contentType = "application/json";
+      res.send(config.getConfiguration());
+    });
+
     app.get("*", (req, res) => {
       res.contentType = "text/html";
       res.sendFile(__dirname + "/frontend-old/notfound.html");
@@ -75,34 +113,8 @@ module.exports = {
 
     io.on("connection", (socket) => {
       //The user connected successfully
-      socket.emit(notify_configuration_update, config.getConfiguration());
       socket.emit(notify_measurements_update, measurements.getMeasurements());
       socket.emit(notify_gps_update, gps.getGPSData());
-
-      socket.on(command_insert_configuration, function (rawConfiguration) {
-        let configuration = JSON.parse(rawConfiguration);
-        console.log(configuration);
-
-        config.insertConfiguration(
-          configuration.host,
-          configuration.username,
-          configuration.password,
-          configuration.queryInterval,
-          configuration.powerMonitoring,
-          configuration.gpsMonitoring
-        );
-        io.emit(notify_configuration_update, config.getConfiguration());
-      });
-
-      socket.on(command_remove_configuration, function (host) {
-        config.removeConfiguration(host);
-        io.emit(notify_configuration_update, config.getConfiguration());
-      });
-
-      socket.on(command_update_configuration, function (update) {
-        config.updateConfiguration(JSON.parse(update));
-        io.emit(notify_configuration_update, config.getConfiguration());
-      });
 
       socket.on(command_start_connection, function (data) {
         ssh.startConnection(data, io);
@@ -125,13 +137,6 @@ module.exports = {
       socket.on(command_delete_gps_data, function (args) {
         gps.deleteGPS();
         socket.emit(notify_gps_update, gps.getGPSData());
-      });
-
-      socket.on(request_configuration_data, function (host) {
-        socket.emit(
-          response_configuration_data,
-          config.requestConfiguration(host)
-        );
       });
 
       socket.on(request_export_data, function (accessPoints) {

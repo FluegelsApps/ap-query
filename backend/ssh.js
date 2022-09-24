@@ -84,7 +84,7 @@ class SSHConnection {
     config.updateConfigurationStatus({
       oldhost: this.host,
       status: "Connecting",
-      state: 1,
+      state: 2,
     });
     io.emit("notify_configdb_updated", config.getConfiguration());
 
@@ -108,7 +108,6 @@ class SSHConnection {
     const useGPSMonitoring = this.gpsMonitoring;
 
     console.log("Establishing connection to " + this.host);
-
     this.currentConnection
       .on("ready", function () {
         console.log("Connection ready");
