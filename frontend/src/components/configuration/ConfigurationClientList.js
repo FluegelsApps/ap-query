@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import ConfigurationClientListItem from "./ConfigurationClientListItem";
 
 const ConfigurationClientList = ({ clients, onEditClient, onDeleteClient, changeClientState }) => {

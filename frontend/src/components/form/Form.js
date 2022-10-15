@@ -34,4 +34,4 @@ export const createSwitch = (label, value, onChange) => {
 };
 
 export const validationNotNull = value => value != null && value.length > 0 ? null : "Field cannot remain empty";
-export const validationNumber = value => value != null && value.length == 0 ? "Field cannot remain empty" : isNaN(value) ? "Must be a number" : null;
+export const validationNumber = value => value != null && value.length === 0 ? "Field cannot remain empty" : isNaN(value) ? "Must be a number" : null;

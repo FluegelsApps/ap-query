@@ -9,10 +9,7 @@ const RootLayout = () => {
     const [exception, setException] = useState(null);
 
     useWebsocket({
-        notify_exception: rawException => {
-            console.log("exception caught");
-            setException(JSON.parse(rawException));
-        }
+        notify_exception: rawException => setException(JSON.parse(rawException))
     });
 
     return (
